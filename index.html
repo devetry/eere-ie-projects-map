@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Indian Energy Projects Map</title>
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css" rel="stylesheet" media="all">
+
+    <link href="//cdnjs.cloudflare.com/ajax/libs/datatables/1.10.10/css/dataTables.bootstrap.min.css" rel="stylesheet" media="all">
+
+    <link href="https://api.mapbox.com/mapbox.js/v2.2.3/mapbox.css" rel="stylesheet">
+
+    <style>
+        body {
+            padding: 20px 0;
+        }
+        #map {
+            height: 489px;
+            width: 100;
+        }
+        /* override DT defaults */
+        div.dataTables_wrapper div.dataTables_paginate {
+            text-align: left;
+        }
+        div.dataTables_wrapper div.dataTables_info {
+            text-align: right;
+        }
+    </style>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script>
+      (function() {
+          var so = document.createElement('script');
+          so.type = 'text/javascript';
+          so.async = true;
+          so.src = '//apps1.eere.energy.gov/includes/ga/eere.js';
+          var s = document.getElementsByTagName('script')[0];
+          s.parentNode.insertBefore(so, s);
+      })();
+    </script>
+
+</head>
+<body>
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm-3">
+            <div id="ui-controls">
+
+
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">State</h3>
+                    </div>
+                    <div class="panel-body">
+                        <select class="form-control" data-target="state">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Technology</h3>
+                    </div>
+                    <div class="panel-body" data-target="technology">
+                    </div>
+                </div>
+
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Project Category</h3>
+                    </div>
+                    <div class="panel-body" data-target="project-category">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="col-sm-9">
+            <div id="map"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12">
+            <table id="datatable" class="table-striped table"></table>
+        </div>
+    </div>
+</div>
+
+
+<!-- Libraries -->
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.0.2/js/bootstrap.min.js"></script>
+
+<script src="//api.mapbox.com/mapbox.js/v2.2.3/mapbox.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/leaflet.markercluster.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.4.2/tabletop.min.js"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/datatables/1.10.10/js/jquery.dataTables.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/datatables/1.10.10/js/dataTables.bootstrap.min.js"></script>
+<script src="geojson.min.js"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/3.0.3/handlebars.min.js"></script>
+<!-- End Libraries -->
+
+
+<!-- Templates -->
+<script id="state-template" type="text/x-handlebars-template">
+    {{#each state}}
+    <option>{{this}}</option>
+    {{/each}}
+</script>
+
+<script id="technology-template" type="text/x-handlebars-template">
+    {{#each technology}}
+    <div class="checkbox">
+    <label><input type="checkbox" value="{{this}}"> {{this}} </label>
+    </div>
+    {{/each}}
+</script>
+
+<script id="project-category-template" type="text/x-handlebars-template">
+    {{#each project-category}}
+    <div class="checkbox">
+    <label><input type="checkbox" value="{{this}}"> {{this}} </label>
+    </div>
+    {{/each}}
+</script>
+<!-- End Templates -->
+
+<script>
+    window.onload = function() { init() };
+    var config = {
+        googlekey : '1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y'
+      , url : 'https://docs.google.com/spreadsheet/pub'
+      , qstring: '?hl=en_US&hl=en_US&output=html&key='
+      , uiTitles : [ 'State', 'Technology', 'Project Category' ]
+      , mapCenter: [ 39.81,-99.84 ]
+      , mapZoom: 4
+      , mapboxToken: 'pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw'
+      , tileLayer: 'mapbox.streets'
+      , mapContainer: 'map'
+      , dataHeaders: ['Project', 'Tribe', 'State', 'Year', 'Project Category', 'Technology']
+    }
+
+    function init() {
+        Tabletop.init({
+            key: config.url+config.qstring+config.googlekey,
+            callback: render,
+            simpleSheet: true
+        })
+    }
+
+
+    function render(data, tabletop) {
+        renderMap(data)
+        buildUI(data)
+        data = linkTitle(data)
+        renderDataTable( data )
+    }
+
+
+    function buildHtmlTemplates( src, data ) {
+        var tmplSrc = $( src ).html()
+          , template = Handlebars.compile( tmplSrc )
+
+        return  template(  data  )
+    }
+
+
+    function buildUI( data ) {
+        var $ui = $('#ui-controls')
+        var uiObj = {}
+
+        // todo: refactor - this is not efficient... relooping thru data
+        config.uiTitles.forEach( function( title ){
+
+            uiObj[ title.toLowerCase().replace(/\W/g,'-') ] = data.map( function( result ){
+                return result[title]
+            })
+            .sort()
+            .filter( function( a,b,c ){ // grab unique items
+                return c.indexOf(a) === b;
+            })
+        })
+
+        $ui.find('[data-target]').each( function(idx, el){
+            var target = '#'+ $(this).data().target + '-template'
+
+            $(this).append( buildHtmlTemplates( target, uiObj ) )
+        })
+    }
+
+
+    function linkTitle( data ) {
+        return data.map(function( row ){
+            row['Project'] = '<a href="'+row['Link']+'">'+row['Project']+'</a>'
+            return row
+        })
+    }
+
+
+    function renderDataTable( data ) {
+      var aoColumns = config.dataHeaders.map( function(header){
+            return {
+                'sTitle': header
+              , 'mDataProp': header
+            }
+      })
+
+      // swap footer UI element placement
+      var dom = '<"row"<"col-sm-6"l><"col-sm-6"f>>' +
+                '<"row"<"col-sm-12"tr>>' +
+                '<"row"<"col-sm-5"p><"col-sm-7"i>>'
+
+      $('#datatable').dataTable({
+          'aaData': data
+        , 'aoColumns': aoColumns
+        , 'dom': dom
+      })
+    }
+
+
+    function renderMap(data){
+        L.mapbox.accessToken = config.mapboxToken;
+
+        var data = GeoJSON.parse( data, { Point: ['Latitude','Longitude']} ); // todo: abstract out the lat/lon field
+        var map = L.mapbox.map(config.mapContainer, config.tileLayer)
+            .setView(config.mapCenter, config.mapZoom);
+
+        var featureLayer = L.mapbox.featureLayer().addTo(map);
+
+        // Add custom popups to each using our custom feature properties
+        featureLayer.on( 'layeradd', function(e) {
+            var marker = e.layer,
+                feature = marker.feature;
+
+            // Create custom popup content
+            var popupContent =  '<h3>'+feature.properties['Project']+'</h3>'
+
+            marker.bindPopup( popupContent,{
+                //closeButton: false,
+                //minWidth: 320
+            });
+        });
+
+        featureLayer.setGeoJSON(data);
+
+
+    }
+
+
+
+
+</script>
+
+
+
+</body>
+</html>
