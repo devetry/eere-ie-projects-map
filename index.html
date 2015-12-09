@@ -12,16 +12,21 @@
     <link href="//cdnjs.cloudflare.com/ajax/libs/datatables/1.10.10/css/dataTables.bootstrap.min.css" rel="stylesheet" media="all">
 
     <link href="https://api.mapbox.com/mapbox.js/v2.2.3/mapbox.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/MarkerCluster.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/MarkerCluster.Default.css" rel="stylesheet">
 
     <style>
         body {
             padding: 20px 0;
         }
         #map {
-            height: 489px;
-            width: 100;
+            height: 559px;
+            width: 100%;
         }
         /* override DT defaults */
+        div.dataTables_wrapper {
+            margin-top: 50px;
+        }
         div.dataTables_wrapper div.dataTables_paginate {
             text-align: left;
         }
@@ -84,7 +89,7 @@
     </div>
     <div class="row">
         <div class="col-sm-12">
-            <table id="datatable" class="table-striped table"></table>
+            <table id="datatable" class="table table-striped table-condensed"></table>
         </div>
     </div>
 </div>
@@ -131,17 +136,20 @@
 
 <script>
     window.onload = function() { init() };
-    var config = {
-        googlekey : '1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y'
-      , url : 'https://docs.google.com/spreadsheet/pub'
-      , qstring: '?hl=en_US&hl=en_US&output=html&key='
-      , uiTitles : [ 'State', 'Technology', 'Project Category' ]
-      , mapCenter: [ 39.81,-99.84 ]
-      , mapZoom: 4
-      , mapboxToken: 'pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw'
-      , tileLayer: 'mapbox.streets'
-      , mapContainer: 'map'
-      , dataHeaders: ['Project', 'Tribe', 'State', 'Year', 'Project Category', 'Technology']
+
+    var map
+      , data
+      , config = {
+            googlekey : '1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y'
+          , url : 'https://docs.google.com/spreadsheet/pub'
+          , qstring: '?hl=en_US&hl=en_US&output=html&key='
+          , uiTitles : [ 'State', 'Technology', 'Project Category' ]
+          , mapCenter: [ 39.81,-99.84 ]
+          , mapZoom: 4
+          , mapboxToken: 'pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw'
+          , tileLayer: 'mapbox.streets'
+          , mapContainer: 'map'
+          , dataHeaders: ['Project', 'Tribe', 'State', 'Year','Assistance Type', 'Project Category', 'Technology']
     }
 
     function init() {
@@ -153,10 +161,15 @@
     }
 
 
-    function render(data, tabletop) {
-        renderMap(data)
-        buildUI(data)
-        data = linkTitle(data)
+    function render(googledata, tabletop) {
+        data = googledata // make the data global
+
+        renderMap( data )
+
+        renderMapData( data )
+
+        buildUI( data )
+
         renderDataTable( data )
     }
 
@@ -202,6 +215,8 @@
 
 
     function renderDataTable( data ) {
+
+      // set up columns properly
       var aoColumns = config.dataHeaders.map( function(header){
             return {
                 'sTitle': header
@@ -214,43 +229,84 @@
                 '<"row"<"col-sm-12"tr>>' +
                 '<"row"<"col-sm-5"p><"col-sm-7"i>>'
 
+      // init the datatable
       $('#datatable').dataTable({
-          'aaData': data
+          'aaData': linkTitle( data )
         , 'aoColumns': aoColumns
         , 'dom': dom
       })
     }
 
 
-    function renderMap(data){
+    function renderMap(){
         L.mapbox.accessToken = config.mapboxToken;
 
-        var data = GeoJSON.parse( data, { Point: ['Latitude','Longitude']} ); // todo: abstract out the lat/lon field
-        var map = L.mapbox.map(config.mapContainer, config.tileLayer)
-            .setView(config.mapCenter, config.mapZoom);
-
-        var featureLayer = L.mapbox.featureLayer().addTo(map);
-
-        // Add custom popups to each using our custom feature properties
-        featureLayer.on( 'layeradd', function(e) {
-            var marker = e.layer,
-                feature = marker.feature;
-
-            // Create custom popup content
-            var popupContent =  '<h3>'+feature.properties['Project']+'</h3>'
-
-            marker.bindPopup( popupContent,{
-                //closeButton: false,
-                //minWidth: 320
-            });
-        });
-
-        featureLayer.setGeoJSON(data);
-
-
+        map = L.mapbox.map( config.mapContainer )
+            .setView( config.mapCenter, config.mapZoom)
+            .addLayer( L.mapbox.tileLayer( config.tileLayer ) )
     }
 
 
+    function renderMapData(data) {
+
+        // this works, but doesn't use a featurelayer, so no setFilter() is available for filtering
+            // var markerclusters = L.markerClusterGroup()
+
+            // var geojsondata = GeoJSON.parse( data, { Point: ['Latitude','Longitude']} ); // todo: abstract out the lat/lon field
+
+            // var geoJsonLayer = L.geoJson( geojsondata, {
+            //     onEachFeature: function(feature, layer) {
+            //         layer.bindPopup( feature.properties['Project'] )
+            //     }
+            // })
+
+            // markerclusters.addLayer(geoJsonLayer)
+
+            // map.addLayer( markerclusters )
+            //     .fitBounds( markerclusters.getBounds() )
+
+
+
+        var markerclusters = new L.MarkerClusterGroup()
+
+        var geojsondata = GeoJSON.parse( data, { Point: ['Latitude','Longitude']} ); //todo: abstract out lat/lon field
+
+        var featureLayer = L.mapbox.featureLayer().setGeoJSON( geojsondata )
+
+
+
+
+        // filter data
+        featureLayer.setFilter(function(){ console.log('filtering'); return true } )
+
+        // remove the current layer
+        map.removeLayer( markerclusters )
+
+
+        // add markers and popup content to marchercluster group
+        featureLayer.eachLayer( function( marker ) {
+
+            var content = '<h3>' + marker.feature.properties.Project + '</h3>'
+
+            marker.bindPopup(content)
+
+            marker.setIcon( L.mapbox.marker.icon( {} ) )
+
+            markerclusters.addLayer( marker )
+        })
+
+        // add markers to map and zoom
+        map.addLayer( markerclusters )
+            .fitBounds( markerclusters.getBounds() )
+
+
+
+    } // renderMapData
+
+    // delegated event handler for when inputs are built out and changed
+    $('#ui-controls').on('change','input, select', function(e){
+        console.log(this.value,e)
+    })
 
 
 </script>
