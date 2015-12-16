@@ -34,7 +34,9 @@
             text-align: right;
         }
     </style>
+
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
     <script>
       (function() {
           var so = document.createElement('script');
@@ -112,8 +114,9 @@
 
 <!-- Templates -->
 <script id="state-template" type="text/x-handlebars-template">
+    <option value="">All</option>
     {{#each state}}
-    <option>{{this}}</option>
+    <option value="{{this}}">{{this}}</option>
     {{/each}}
 </script>
 
@@ -134,182 +137,7 @@
 </script>
 <!-- End Templates -->
 
-<script>
-    window.onload = function() { init() };
-
-    var map
-      , data
-      , config = {
-            googlekey : '1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y'
-          , url : 'https://docs.google.com/spreadsheet/pub'
-          , qstring: '?hl=en_US&hl=en_US&output=html&key='
-          , uiTitles : [ 'State', 'Technology', 'Project Category' ]
-          , mapCenter: [ 39.81,-99.84 ]
-          , mapZoom: 4
-          , mapboxToken: 'pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw'
-          , tileLayer: 'mapbox.streets'
-          , mapContainer: 'map'
-          , dataHeaders: ['Project', 'Tribe', 'State', 'Year','Assistance Type', 'Project Category', 'Technology']
-    }
-
-    function init() {
-        Tabletop.init({
-            key: config.url+config.qstring+config.googlekey,
-            callback: render,
-            simpleSheet: true
-        })
-    }
-
-
-    function render(googledata, tabletop) {
-        data = googledata // make the data global
-
-        renderMap( data )
-
-        renderMapData( data )
-
-        buildUI( data )
-
-        renderDataTable( data )
-    }
-
-
-    function buildHtmlTemplates( src, data ) {
-        var tmplSrc = $( src ).html()
-          , template = Handlebars.compile( tmplSrc )
-
-        return  template(  data  )
-    }
-
-
-    function buildUI( data ) {
-        var $ui = $('#ui-controls')
-        var uiObj = {}
-
-        // todo: refactor - this is not efficient... relooping thru data
-        config.uiTitles.forEach( function( title ){
-
-            uiObj[ title.toLowerCase().replace(/\W/g,'-') ] = data.map( function( result ){
-                return result[title]
-            })
-            .sort()
-            .filter( function( a,b,c ){ // grab unique items
-                return c.indexOf(a) === b;
-            })
-        })
-
-        $ui.find('[data-target]').each( function(idx, el){
-            var target = '#'+ $(this).data().target + '-template'
-
-            $(this).append( buildHtmlTemplates( target, uiObj ) )
-        })
-    }
-
-
-    function linkTitle( data ) {
-        return data.map(function( row ){
-            row['Project'] = '<a href="'+row['Link']+'">'+row['Project']+'</a>'
-            return row
-        })
-    }
-
-
-    function renderDataTable( data ) {
-
-      // set up columns properly
-      var aoColumns = config.dataHeaders.map( function(header){
-            return {
-                'sTitle': header
-              , 'mDataProp': header
-            }
-      })
-
-      // swap footer UI element placement
-      var dom = '<"row"<"col-sm-6"l><"col-sm-6"f>>' +
-                '<"row"<"col-sm-12"tr>>' +
-                '<"row"<"col-sm-5"p><"col-sm-7"i>>'
-
-      // init the datatable
-      $('#datatable').dataTable({
-          'aaData': linkTitle( data )
-        , 'aoColumns': aoColumns
-        , 'dom': dom
-      })
-    }
-
-
-    function renderMap(){
-        L.mapbox.accessToken = config.mapboxToken;
-
-        map = L.mapbox.map( config.mapContainer )
-            .setView( config.mapCenter, config.mapZoom)
-            .addLayer( L.mapbox.tileLayer( config.tileLayer ) )
-    }
-
-
-    function renderMapData(data) {
-
-        // this works, but doesn't use a featurelayer, so no setFilter() is available for filtering
-            // var markerclusters = L.markerClusterGroup()
-
-            // var geojsondata = GeoJSON.parse( data, { Point: ['Latitude','Longitude']} ); // todo: abstract out the lat/lon field
-
-            // var geoJsonLayer = L.geoJson( geojsondata, {
-            //     onEachFeature: function(feature, layer) {
-            //         layer.bindPopup( feature.properties['Project'] )
-            //     }
-            // })
-
-            // markerclusters.addLayer(geoJsonLayer)
-
-            // map.addLayer( markerclusters )
-            //     .fitBounds( markerclusters.getBounds() )
-
-
-
-        var markerclusters = new L.MarkerClusterGroup()
-
-        var geojsondata = GeoJSON.parse( data, { Point: ['Latitude','Longitude']} ); //todo: abstract out lat/lon field
-
-        var featureLayer = L.mapbox.featureLayer().setGeoJSON( geojsondata )
-
-
-
-
-        // filter data
-        featureLayer.setFilter(function(){ console.log('filtering'); return true } )
-
-        // remove the current layer
-        map.removeLayer( markerclusters )
-
-
-        // add markers and popup content to marchercluster group
-        featureLayer.eachLayer( function( marker ) {
-
-            var content = '<h3>' + marker.feature.properties.Project + '</h3>'
-
-            marker.bindPopup(content)
-
-            marker.setIcon( L.mapbox.marker.icon( {} ) )
-
-            markerclusters.addLayer( marker )
-        })
-
-        // add markers to map and zoom
-        map.addLayer( markerclusters )
-            .fitBounds( markerclusters.getBounds() )
-
-
-
-    } // renderMapData
-
-    // delegated event handler for when inputs are built out and changed
-    $('#ui-controls').on('change','input, select', function(e){
-        console.log(this.value,e)
-    })
-
-
-</script>
+<script src="app.js"></script>
 
 
 
