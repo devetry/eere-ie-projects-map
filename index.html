@@ -62,7 +62,7 @@
                         <h3 class="panel-title">State</h3>
                     </div>
                     <div class="panel-body">
-                        <select class="form-control" data-target="state">
+                        <select class="form-control" data-target="State">
                         </select>
                     </div>
                 </div>
@@ -71,7 +71,7 @@
                     <div class="panel-heading">
                         <h3 class="panel-title">Technology</h3>
                     </div>
-                    <div class="panel-body" data-target="technology">
+                    <div class="panel-body" data-target="Technology">
                     </div>
                 </div>
 
@@ -79,7 +79,7 @@
                     <div class="panel-heading">
                         <h3 class="panel-title">Project Category</h3>
                     </div>
-                    <div class="panel-body" data-target="project-category">
+                    <div class="panel-body" data-target="Project Category">
                     </div>
                 </div>
 
@@ -113,23 +113,23 @@
 
 
 <!-- Templates -->
-<script id="state-template" type="text/x-handlebars-template">
+<script data-template="State" type="text/x-handlebars-template">
     <option value="">All</option>
-    {{#each state}}
+    {{#each State}}
     <option value="{{this}}">{{this}}</option>
     {{/each}}
 </script>
 
-<script id="technology-template" type="text/x-handlebars-template">
-    {{#each technology}}
+<script data-template="Technology" type="text/x-handlebars-template">
+    {{#each Technology}}
     <div class="checkbox">
     <label><input type="checkbox" value="{{this}}"> {{this}} </label>
     </div>
     {{/each}}
 </script>
 
-<script id="project-category-template" type="text/x-handlebars-template">
-    {{#each project-category}}
+<script data-template="Project Category" type="text/x-handlebars-template">
+    {{#each [Project Category]}}
     <div class="checkbox">
     <label><input type="checkbox" value="{{this}}"> {{this}} </label>
     </div>
