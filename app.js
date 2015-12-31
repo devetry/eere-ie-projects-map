@@ -30,6 +30,8 @@
     function render(googledata, tabletop) {
         data = googledata // make the data global
 
+        linkTitle( data ) // mashup the project name and hyperlink
+
         buildUI( data )
 
         renderMap( data )
@@ -75,11 +77,18 @@
         })
     }
 
-
+    /**
+     * Wrap the project name in a hyperlink
+     *
+     * @param  {array} rows from datasource
+     *
+     */
     function linkTitle( data ) {
-        return data.map(function( row ){
-            row['Project'] = '<a href="'+row['Link']+'">'+row['Project']+'</a>'
-            return row
+
+        data.forEach( function( row ){
+
+            row['Project'] = '<a href="'+ row['Link'] +'">'+ row['Project'] +'</a>'
+
         })
     }
 
@@ -101,7 +110,7 @@
 
         // init the datatable
         datatable = $( '#' + config.datatableContainer ).DataTable({
-            'aaData': linkTitle( data )
+            'aaData': data
           , 'aoColumns': aoColumns
           , 'dom': dom
           , 'oLanguage': { 'sSearch': 'Search table:' }
@@ -134,21 +143,23 @@
 
         })
 
-
-        //filter out empty values in the array
-        // return values.filter( function(el) {
-        //     return el !== ''
-        // })
-
-        //return filterObj
-
     }
 
 
     function renderMapMarkers( data ) {
         var numMarkers = 0 // a counter to know if our layer is empty
 
-        markerclusters = new L.MarkerClusterGroup()
+        markerclusters = new L.MarkerClusterGroup(
+            {
+                spiderfyOnMaxZoom: true
+              , disableClusteringAtZoom: 20 // so we can see markers with identical lat/lon
+            }
+        )
+
+        // manually fire spiderfy
+        // markerclusters.on( 'clusterclick', function (e) {
+        //     e.layer.spiderfy()
+        // })
 
         var geojsondata = GeoJSON.parse( data, { Point: ['Latitude','Longitude']} ) //todo: abstract out lat/lon field
 
@@ -163,8 +174,14 @@
         // add markers and popup content to marchercluster group
         featureLayer.eachLayer( function( marker ) {
 
-            var content = '<h3>' + marker.feature.properties['Tribe'] +'</h3>' +
-                          '<h4>' + marker.feature.properties['Project'] + '</h4>'
+            var content = '<h3>' + marker.feature.properties['Tribe'] +'</h3>'
+
+            // if ( typeof marker.feature.properties['Project'] === 'object' ) {
+            //     content += "many!"
+            // } else {
+            //     content += '<h4>' + marker.feature.properties['Project'] + '</h4>'
+            // }
+            content += '<h4>' + marker.feature.properties['Project'] + '</h4>'
 
             marker.bindPopup( content )
 
@@ -190,6 +207,23 @@
 
 
     }
+
+    // function mergeGeoJSONPoints( jsonArray ) {
+
+
+    //     jsonArray.features.sort( function( a , b ) {
+
+    //         if (a.geometry.coordinates > b.geometry.coordinates ) {
+    //             return 1
+    //         } else if ( a.geometry.coordinates < b.geometry.coordinates ) {
+    //             return -1
+    //         } else if ( a.geometry.coordinates == b.geometry.coordinates ) {
+    //             console.log('identical coords')
+    //         }
+
+    //     })
+    //     return jsonArray
+    // }
 
     /**
      * clearMarkers -
@@ -226,21 +260,6 @@
 
         return bln
 
-        // var mytechs = feature.properties['Technology'].split(',')
-        //   , mycategories = feature.properties['Project Category'].split(',')
-        //   , mystate = feature.properties['State'].split(',')
-
-        // var techValues  = getValues( $('#ui-controls [data-target="Technology"] :checked') )
-        // var catValues   = getValues( $('#ui-controls [data-target="Project Category"] :checked') )
-        // var stateValues = getValues( $('#ui-controls [data-target="State"] :checked') )
-
-        // if ( stateValues == '') { // catch the "All" option
-        //     selectedstate = []
-        // }
-
-        // return matches( mytechs, techValues )
-        //     && matches( mycategories, catValues )
-        //     && matches( mystate, stateValues )
     }
 
 
