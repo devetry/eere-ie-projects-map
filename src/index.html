@@ -106,7 +106,6 @@
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/datatables/1.10.10/js/jquery.dataTables.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/datatables/1.10.10/js/dataTables.bootstrap.min.js"></script>
-<script src="geojson.min.js"></script>
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/3.0.3/handlebars.min.js"></script>
 <!-- End Libraries -->
@@ -137,8 +136,10 @@
 </script>
 <!-- End Templates -->
 
-<script src="app.js"></script>
-
+<!-- build:js client/js/app.min.js -->
+<script src="client/js/geojson.min.js"></script>
+<script src="client/js/app.js"></script>
+<!-- endbuild -->
 
 
 </body>
