@@ -87,7 +87,7 @@
 
         data.forEach( function( row ){
 
-            row['Project'] = '<a href="'+ row['Link'] +'">'+ row['Project'] +'</a>'
+            row['Project'] = '<a target="_blank" href="'+ row['Link'] +'">'+ row['Project'] +'</a>'
 
         })
     }
@@ -182,6 +182,7 @@
             //     content += '<h4>' + marker.feature.properties['Project'] + '</h4>'
             // }
             content += '<h4>' + marker.feature.properties['Project'] + '</h4>'
+            //content += '<h4>' + marker.feature.properties['State'] + '</h4>'
 
             marker.bindPopup( content )
 
