@@ -137,8 +137,9 @@
             config.uiFilters[filter].length = 0 // clear out existing array
 
             $el.each( function(el){
-                if ( this.value.length )
+                if ( this.value.length ) {
                     config.uiFilters[filter].push( this.value )
+                }
             })
 
         })
@@ -152,6 +153,7 @@
         markerclusters = new L.MarkerClusterGroup(
             {
                 spiderfyOnMaxZoom: true
+              , singleMarkerMode:  true
               , disableClusteringAtZoom: 20 // so we can see markers with identical lat/lon
             }
         )
