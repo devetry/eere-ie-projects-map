@@ -262,10 +262,13 @@ function filterData( feature, filters ) {
     var bln = true
 
     Object.keys( filters ).forEach( function( filter ) {
+        var props
 
-        var props = feature.properties[ filter ].split(',') // convert comma separated string to array
+        if ( feature.properties[ filter ] ) {
+            props = feature.properties[ filter ].split(',') // convert comma separated string to array
 
-        bln = bln && matches( props, filters[ filter ] )
+            bln = bln && matches( props, filters[ filter ] )
+        }
 
     })
 
