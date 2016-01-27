@@ -4,7 +4,8 @@ var map
   , datatable
   , data
   , markerclusters
-  , config = {
+
+var config = {
         googlekey : '1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y'
       , url : 'https://docs.google.com/spreadsheet/pub'
       , qstring: '?hl=en_US&hl=en_US&output=html&key='
@@ -52,7 +53,12 @@ function buildHtmlTemplates( src, data ) {
     return  template(  data  )
 }
 
-
+/**
+ *
+ * buildUI - build the inputs/selects/checkboxes used to control the map and table
+ * @param  {array} data rows from the datasource
+ *
+ */
 function buildUI( data ) {
     var $ui = $('#ui-controls')
     var uiObj = {}
@@ -80,7 +86,7 @@ function buildUI( data ) {
 /**
  * Wrap the project name in a hyperlink
  *
- * @param  {array} rows from datasource
+ * @param  {array} data - rows from datasource
  *
  */
 function linkTitle( data ) {
@@ -92,7 +98,12 @@ function linkTitle( data ) {
     })
 }
 
-
+/**
+ * todo: if one of our headers isn't in the data, prune it so DT doesn't throw an error
+ * [renderDataTable description]
+ * @param  {[type]} data [description]
+ * @return {[type]}      [description]
+ */
 function renderDataTable( data ) {
 
     // set up columns properly
@@ -118,7 +129,10 @@ function renderDataTable( data ) {
 
 }
 
-
+/**
+ * renderMap - set the zoom, coords, tiles, and create a mapbox map
+ * @return {[type]} [description]
+ */
 function renderMap() {
     L.mapbox.accessToken = config.mapboxToken;
 
@@ -127,7 +141,11 @@ function renderMap() {
         .addLayer( L.mapbox.tileLayer( config.tileLayer ) )
 }
 
-
+/**
+ *
+ * getFilterValues - check the state of our UI elements
+ *
+ */
 function getFilterValues() {
 
     Object.keys( config.uiFilters ).forEach( function ( filter ){
@@ -146,7 +164,12 @@ function getFilterValues() {
 
 }
 
-
+/**
+ *
+ * renderMapMarkers -
+ * @param  {array} data -
+ *
+ */
 function renderMapMarkers( data ) {
     var numMarkers = 0 // a counter to know if our layer is empty
 
@@ -211,25 +234,10 @@ function renderMapMarkers( data ) {
 
 }
 
-// function mergeGeoJSONPoints( jsonArray ) {
 
-
-//     jsonArray.features.sort( function( a , b ) {
-
-//         if (a.geometry.coordinates > b.geometry.coordinates ) {
-//             return 1
-//         } else if ( a.geometry.coordinates < b.geometry.coordinates ) {
-//             return -1
-//         } else if ( a.geometry.coordinates == b.geometry.coordinates ) {
-//             console.log('identical coords')
-//         }
-
-//     })
-//     return jsonArray
-// }
 
 /**
- * clearMarkers -
+ * clearMarkers - remove the marker layer from the map
  * @param  {object} markerLayer
  */
 function clearMarkers( markerLayer ) {
@@ -244,10 +252,10 @@ function clearMarkers( markerLayer ) {
 
 
 /**
- * filterData -
+ * filterData - find a value within an object's keys
  * @param  {object} feature
  * @param  {object} filters
- * @return {boolean}
+ * @return {boolean} true if the feature matches
  */
 function filterData( feature, filters ) {
 
@@ -287,12 +295,11 @@ function matches( needles, haystack ){
     }
 
     return ismatch
-
 }
 
 
 /**
- * filterDataTable -
+ * filterDataTable - use datatables search/filter function to filter the table
  * @param  {[type]} terms [description]
  *
  */
