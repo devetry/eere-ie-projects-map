@@ -302,9 +302,17 @@ function filterDataTable() {
     Object.keys( config.uiFilters ).forEach( function( filter ){
 
         var idx = config.dataHeaders.indexOf( filter )
-          , term = config.uiFilters[ filter ].join('|') // convert array to pipe-separated string for regex search
 
-        datatable.column( idx ).search( term, true, false )
+        // build out regex terms that match the word/phrase exactly
+        // eg don't let "other" match "geothermal"
+        var terms = config.uiFilters[ filter ].map( function(val){
+            return '^' + val + '$'
+        })
+
+        // convert array to pipe-separated string for regex search
+        var regexterms = terms.join('|')
+
+        datatable.column( idx ).search( regexterms, true, false )
 
     })
 
