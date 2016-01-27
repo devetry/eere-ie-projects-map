@@ -1,44 +1,51 @@
-(function(){
-    window.onload = function() { init() }
+(() => {
+    'use strict'
 
-    var map
+
+    const config = {
+        googlekey : '1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y'
+      , url : 'https://docs.google.com/spreadsheet/pub'
+      , qstring: '?hl=en_US&hl=en_US&output=html&key='
+      , uiFilters : { 'State': [], 'Technology': [], 'Category': [] }
+      , mapCenter: [ 39.81,-99.84 ]
+      , mapZoom: 4
+      , mapboxToken: 'pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw'
+      , tileLayer: 'mapbox.streets'
+      , mapContainer: 'map'
+      , datatableContainer: 'datatable'
+      , dataHeaders: ['Project', 'Tribe', 'State', 'Year','Assistance Type', 'Category', 'Technology']
+    }
+
+
+    let map
       , datatable
       , data
       , markerclusters
 
-    var config = {
-            googlekey : '1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y'
-          , url : 'https://docs.google.com/spreadsheet/pub'
-          , qstring: '?hl=en_US&hl=en_US&output=html&key='
-          , uiFilters : { 'State': [], 'Technology': [], 'Category': [] }
-          , mapCenter: [ 39.81,-99.84 ]
-          , mapZoom: 4
-          , mapboxToken: 'pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw'
-          , tileLayer: 'mapbox.streets'
-          , mapContainer: 'map'
-          , datatableContainer: 'datatable'
-          , dataHeaders: ['Project', 'Tribe', 'State', 'Year','Assistance Type', 'Category', 'Technology']
+
+    window.onload = function() {
+        init( config )
     }
 
-    function init() {
+    function init( cfg ) {
         Tabletop.init({
-            key: config.url + config.qstring + config.googlekey
+            key: cfg.url + cfg.qstring + cfg.googlekey
           , callback: render
           , simpleSheet: true
         })
     }
 
 
-    function render(googledata, tabletop) {
+    function render( googledata, tabletop ) {
         data = googledata // make the data global
 
         linkTitle( data ) // mashup the project name and hyperlink
 
         buildUI( data )
 
-        renderMap( data )
+        renderMap( config )
 
-        getFilterValues()
+        getFilterValues( config )
 
         renderMapMarkers( data )
 
@@ -46,12 +53,12 @@
     }
 
 
-    function buildHtmlTemplates( src, data ) {
-        var tmplSrc = $('script').filter( '[data-template="' + src + '"]' ).html()
+    function buildHtmlTemplates( src, uiobj ) {
+        let tmplSrc = $('script').filter( '[data-template="' + src + '"]' ).html()
 
-        var template = Handlebars.compile( tmplSrc )
+        let template = Handlebars.compile( tmplSrc )
 
-        return  template(  data  )
+        return  template(  uiobj  )
     }
 
     /**
@@ -60,27 +67,23 @@
      * @param  {array} data rows from the datasource
      *}())
      */
-    function buildUI( data ) {
-        var $ui = $('#ui-controls')
-        var uiObj = {}
+    function buildUI( dataarray ) {
+        const $ui = $('#ui-controls')
+        let uiObj = {}
 
         // todo: refactor - this is not efficient... relooping thru data
-        Object.keys(config.uiFilters).forEach( function( title ){
+        Object.keys(config.uiFilters).forEach( title => {
 
-            uiObj[ title ] = data
-                .map( function( result ){
-                    return result[title]
-                })
+            uiObj[ title ] = dataarray
+                .map( result => result[title] )
                 .sort()
-                .filter( function( a, b, c ){ // grab unique items
-                    return c.indexOf(a) === b;
-                })
+                .filter( ( a, b, c ) => c.indexOf(a) === b ) // grab unique items
         })
 
-        $ui.find('[data-target]').each( function(idx, el){
-            var target = $(this).data().target
+        $ui.find('[data-target]').each( (idx, el) => {
+            let target = $(el).data().target
 
-            $(this).append( buildHtmlTemplates( target, uiObj ) )
+            $(el).append( buildHtmlTemplates( target, uiObj ) )
         })
     }
 
@@ -90,12 +93,10 @@
      * @param  {array} data - rows from datasource
      *
      */
-    function linkTitle( data ) {
+    function linkTitle( dataarray ) {
 
-        data.forEach( function( row ){
-
-            row.Project = '<a target="_blank" href="'+ row.Link +'">'+ row.Project +'</a>'
-
+        dataarray.forEach( row => {
+            row.Project = `<a target="_blank" href="${row.Link}">${row.Project}</a>`
         })
     }
 
@@ -105,10 +106,10 @@
      * @param  {[type]} data [description]
      * @return {[type]}      [description]
      */
-    function renderDataTable( data ) {
+    function renderDataTable( dataarray ) {
 
         // set up columns properly
-        var aoColumns = config.dataHeaders.map( function(header){
+        const aoColumns = config.dataHeaders.map( header => {
               return {
                   'sTitle': header
                 , 'mDataProp': header
@@ -116,13 +117,13 @@
         })
 
         // swap footer UI element placement
-        var dom = '<"row"<"col-sm-6"l><"col-sm-6"f>>' +
+        const dom = '<"row"<"col-sm-6"l><"col-sm-6"f>>' +
                   '<"row"<"col-sm-12"tr>>' +
                   '<"row"<"col-sm-5"p><"col-sm-7"i>>'
 
         // init the datatable
         datatable = $( '#' + config.datatableContainer ).DataTable({
-            'aaData': data
+            'aaData': dataarray
           , 'aoColumns': aoColumns
           , 'dom': dom
           , 'oLanguage': { 'sSearch': 'Search table:' }
@@ -134,12 +135,12 @@
      * renderMap - set the zoom, coords, tiles, and create a mapbox map
      * @return {[type]} [description]
      */
-    function renderMap() {
-        L.mapbox.accessToken = config.mapboxToken;
+    function renderMap( cfg ) {
+        L.mapbox.accessToken = cfg.mapboxToken
 
-        map = L.mapbox.map( config.mapContainer )
-            .setView( config.mapCenter, config.mapZoom)
-            .addLayer( L.mapbox.tileLayer( config.tileLayer ) )
+        map = L.mapbox.map( cfg.mapContainer )
+            .setView( cfg.mapCenter, cfg.mapZoom)
+            .addLayer( L.mapbox.tileLayer( cfg.tileLayer ) )
     }
 
     /**
@@ -147,17 +148,17 @@
      * getFilterValues - check the state of our UI elements
      *
      */
-    function getFilterValues() {
+    function getFilterValues( cfg ) {
 
-        Object.keys( config.uiFilters ).forEach( function ( filter ){
+        Object.keys( cfg.uiFilters ).forEach( filter => {
 
-            var $el = $('#ui-controls [data-target="' + filter + '"] :checked')
+            const $el = $('#ui-controls [data-target="' + filter + '"] :checked')
 
-            config.uiFilters[filter].length = 0 // clear out existing array
+            cfg.uiFilters[filter].length = 0 // clear out existing array
 
-            $el.each( function(el){
-                if ( this.value.length ) {
-                    config.uiFilters[filter].push( this.value )
+            $el.each( (idx, el) => {
+                if ( el.value.length ) {
+                    cfg.uiFilters[filter].push( el.value )
                 }
             })
 
@@ -171,8 +172,8 @@
      * @param  {array} data -
      *
      */
-    function renderMapMarkers( data ) {
-        var numMarkers = 0 // a counter to know if our layer is empty
+    function renderMapMarkers( dataarray ) {
+        let numMarkers = 0 // a counter to know if our layer is empty
 
         markerclusters = new L.MarkerClusterGroup(
             {
@@ -187,28 +188,20 @@
         //     e.layer.spiderfy()
         // })
 
-        var geojsondata = GeoJSON.parse( data, { Point: ['Latitude','Longitude']} ) //todo: abstract out lat/lon field
+        const geojsondata = GeoJSON.parse( dataarray, { Point: ['Latitude','Longitude']} ) //todo: abstract out lat/lon field
 
-        var featureLayer = L.mapbox.featureLayer().setGeoJSON( geojsondata )
+        const featureLayer = L.mapbox.featureLayer().setGeoJSON( geojsondata )
 
         // filter data
-        featureLayer.setFilter( function( feature ){
-            return filterData( feature, config.uiFilters )
-        })
+        featureLayer.setFilter(  feature => filterData( feature, config.uiFilters ))
 
 
         // add markers and popup content to marchercluster group
-        featureLayer.eachLayer( function( marker ) {
+        featureLayer.eachLayer( marker => {
 
-            var content = '<h3>' + marker.feature.properties.Tribe +'</h3>'
+            let content = `<h3>${marker.feature.properties.Tribe}</h3>`
 
-            // if ( typeof marker.feature.properties['Project'] === 'object' ) {
-            //     content += "many!"
-            // } else {
-            //     content += '<h4>' + marker.feature.properties['Project'] + '</h4>'
-            // }
-            content += '<h4>' + marker.feature.properties.Project + '</h4>'
-            //content += '<h4>' + marker.feature.properties['State'] + '</h4>'
+            content += `<h4>${marker.feature.properties.Project}</h4>`
 
             marker.bindPopup( content )
 
@@ -216,7 +209,7 @@
 
             markerclusters.addLayer( marker )
 
-            numMarkers++
+            numMarkers = numMarkers + 1
         })
 
 
@@ -260,10 +253,10 @@
      */
     function filterData( feature, filters ) {
 
-        var bln = true
+        let bln = true
 
-        Object.keys( filters ).forEach( function( filter ) {
-            var props
+        Object.keys( filters ).forEach( filter => {
+            let props
 
             if ( feature.properties[ filter ] ) {
                 props = feature.properties[ filter ].split(',') // convert comma separated string to array
@@ -274,7 +267,6 @@
         })
 
         return bln
-
     }
 
 
@@ -288,15 +280,14 @@
      */
     function matches( needles, haystack ){
 
-        var ismatch = true
+        let ismatch
 
-        if ( haystack.length ) {
+        ismatch = haystack.length ? haystack.some( option => needles.indexOf( option ) >= 0 ) : true
+        // if ( haystack.length ) {
 
-            ismatch = haystack.some( function( option ) {
-                return needles.indexOf( option ) >= 0
-            })
+        //   ismatch   = haystack.some( option => needles.indexOf( option ) >= 0 )
 
-        }
+        // }
 
         return ismatch
     }
@@ -310,18 +301,16 @@
     function filterDataTable() {
 
 
-        Object.keys( config.uiFilters ).forEach( function( filter ){
+        Object.keys( config.uiFilters ).forEach( filter => {
 
-            var idx = config.dataHeaders.indexOf( filter )
+            let idx = config.dataHeaders.indexOf( filter )
 
             // build out regex terms that match the word/phrase exactly
             // eg don't let "other" match "geothermal"
-            var terms = config.uiFilters[ filter ].map( function(val){
-                return '^' + val + '$'
-            })
+            let terms = config.uiFilters[ filter ].map( val => `^${val}$` )
 
             // convert array to pipe-separated string for regex search
-            var regexterms = terms.join('|')
+            let regexterms = terms.join('|')
 
             datatable.column( idx ).search( regexterms, true, false )
 
@@ -331,10 +320,10 @@
     }
 
     // delegated event handler for when inputs are built out and changed
-    $('#ui-controls').on( 'change','input, select', function(e){
+    $('#ui-controls').on( 'change','input, select', function(){
         clearMarkers( markerclusters )
-        getFilterValues()
+        getFilterValues( config )
         renderMapMarkers( data )
         filterDataTable()
     })
-}())
+})()

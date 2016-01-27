@@ -1,2 +1,4 @@
+node_modules/
+gulpfile.js
 src/client/js/*.min.js
 src/client/js/vendor/*
