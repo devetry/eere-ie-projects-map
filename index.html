@@ -57,11 +57,11 @@
                     </div>
                 </div>
 
-                <div class="panel panel-default">
+                <div class="panel panel-default hide">
                     <div class="panel-heading">
-                        <h3 class="panel-title">Project Category</h3>
+                        <h3 class="panel-title">Category</h3>
                     </div>
-                    <div class="panel-body" data-target="Project Category">
+                    <div class="panel-body" data-target="Category">
                     </div>
                 </div>
 
@@ -109,8 +109,8 @@
     {{/each}}
 </script>
 
-<script data-template="Project Category" type="text/x-handlebars-template">
-    {{#each [Project Category]}}
+<script data-template="Category" type="text/x-handlebars-template">
+    {{#each [Category]}}
     <div class="checkbox">
     <label><input type="checkbox" value="{{this}}"> {{this}} </label>
     </div>
