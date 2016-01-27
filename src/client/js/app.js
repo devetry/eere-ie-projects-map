@@ -8,14 +8,14 @@
             googlekey : '1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y'
           , url : 'https://docs.google.com/spreadsheet/pub'
           , qstring: '?hl=en_US&hl=en_US&output=html&key='
-          , uiFilters : { 'State': [], 'Technology': [], 'Project Category': [] }
+          , uiFilters : { 'State': [], 'Technology': [], 'Category': [] }
           , mapCenter: [ 39.81,-99.84 ]
           , mapZoom: 4
           , mapboxToken: 'pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw'
           , tileLayer: 'mapbox.streets'
           , mapContainer: 'map'
           , datatableContainer: 'datatable'
-          , dataHeaders: ['Project', 'Tribe', 'State', 'Year','Assistance Type', 'Project Category', 'Technology']
+          , dataHeaders: ['Project', 'Tribe', 'State', 'Year','Assistance Type', 'Category', 'Technology']
     }
 
     function init() {
