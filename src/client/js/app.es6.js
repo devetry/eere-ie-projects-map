@@ -109,10 +109,10 @@
     function renderDataTable( dataarray ) {
 
         // set up columns properly
-        const aoColumns = config.dataHeaders.map( header => {
+        const columns = config.dataHeaders.map( header => {
               return {
-                  'sTitle': header
-                , 'mDataProp': header
+                  title: header
+                , data: header
               }
         })
 
@@ -123,10 +123,10 @@
 
         // init the datatable
         datatable = $( '#' + config.datatableContainer ).DataTable({
-            'aaData': dataarray
-          , 'aoColumns': aoColumns
-          , 'dom': dom
-          , 'oLanguage': { 'sSearch': 'Search table:' }
+            data: dataarray
+          , columns: columns
+          , dom: dom
+          , language: { search: 'Search table:' }
         })
 
     }
