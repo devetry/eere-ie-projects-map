@@ -3,10 +3,10 @@
 
 
     const config = {
-        googlekey : '1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y'
-      , url : 'https://docs.google.com/spreadsheet/pub'
+        googlekey: '1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y'
+      , url: 'https://docs.google.com/spreadsheet/pub'
       , qstring: '?hl=en_US&hl=en_US&output=html&key='
-      , uiFilters : { 'State': [], 'Technology': [], 'Category': [] }
+      , uiFilters: { 'State': [], 'Technology': [], 'Category': [] }
       , mapCenter: [ 39.81,-99.84 ]
       , mapZoom: 4
       , mapboxToken: 'pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw'
@@ -36,19 +36,15 @@
     }
 
 
-    function render( googledata, tabletop ) {
+    function render( googledata /*, tabletop */ ) {
         data = googledata // make the data global
 
         linkTitle( data ) // mashup the project name and hyperlink
-
         buildUI( data )
-
         renderMap( config )
-
         getFilterValues( config )
-
         renderMapMarkers( data )
-
+        countMarkersFromState('Alaska')
         renderDataTable( data )
     }
 
@@ -65,7 +61,7 @@
      *
      * buildUI - build the inputs/selects/checkboxes used to control the map and table
      * @param  {array} data rows from the datasource
-     *}())
+     *
      */
     function buildUI( dataarray ) {
         const $ui = $('#ui-controls')
@@ -75,7 +71,7 @@
         Object.keys(config.uiFilters).forEach( title => {
 
             uiObj[ title ] = dataarray
-                .map( result => result[title] )
+                .map( result => result[ title ] )
                 .sort()
                 .filter( ( a, b, c ) => c.indexOf(a) === b ) // grab unique items
         })
@@ -84,6 +80,15 @@
             let target = $(el).data().target
 
             $(el).append( buildHtmlTemplates( target, uiObj ) )
+        })
+
+        // event handler for inputs
+        $ui.on( 'change', 'input, select', function(){
+            clearMarkers( markerclusters )
+            getFilterValues( config )
+            renderMapMarkers( data )
+            zoomMapBounds( markerclusters, config )
+            filterDataTable()
         })
     }
 
@@ -104,7 +109,6 @@
      * todo: if one of our headers isn't in the data, prune it so DT doesn't throw an error
      * [renderDataTable description]
      * @param  {[type]} data [description]
-     * @return {[type]}      [description]
      */
     function renderDataTable( dataarray ) {
 
@@ -132,8 +136,10 @@
     }
 
     /**
+     *
      * renderMap - set the zoom, coords, tiles, and create a mapbox map
      * @return {[type]} [description]
+     *
      */
     function renderMap( cfg ) {
         L.mapbox.accessToken = cfg.mapboxToken
@@ -173,30 +179,51 @@
      *
      */
     function renderMapMarkers( dataarray ) {
-        let numMarkers = 0 // a counter to know if our layer is empty
+
+        /**
+         * Custom function for creating icons.
+         * Allows us to override cluster size breakpoints when we init MarkerCluster.
+         */
+        function iconCreateFunction( cluster ){
+            let childCount = cluster.getChildCount()
+
+            let c = ' marker-cluster-';
+            if (childCount < 10) {
+                c += 'small'
+            } else if (childCount < 50) {
+                c += 'medium'
+            } else {
+                c += 'large'
+            }
+
+            return new L.DivIcon({
+                html: `<div><span>${childCount}</span></div>`
+              , className: 'marker-cluster' + c
+              , iconSize: new L.Point(40, 40)
+            })
+        }
 
         markerclusters = new L.MarkerClusterGroup(
             {
                 spiderfyOnMaxZoom: true
               , singleMarkerMode:  true
               , disableClusteringAtZoom: 20 // so we can see markers with identical lat/lon
+              , iconCreateFunction: iconCreateFunction
             }
         )
 
         // manually fire spiderfy
-        // markerclusters.on( 'clusterclick', function (e) {
-        //     e.layer.spiderfy()
-        // })
+        // markerclusters.on( 'clusterclick', function (e) { e.layer.spiderfy() })
 
         const geojsondata = GeoJSON.parse( dataarray, { Point: ['Latitude','Longitude']} ) //todo: abstract out lat/lon field
 
         const featureLayer = L.mapbox.featureLayer().setGeoJSON( geojsondata )
 
         // filter data
-        featureLayer.setFilter(  feature => filterData( feature, config.uiFilters ))
+        featureLayer.setFilter( feature => filterData( feature, config.uiFilters ))
 
 
-        // add markers and popup content to marchercluster group
+        // add markers and popup content to markercluster group
         featureLayer.eachLayer( marker => {
 
             let content = `<h3>${marker.feature.properties.Tribe}</h3>`
@@ -209,26 +236,41 @@
 
             markerclusters.addLayer( marker )
 
-            numMarkers = numMarkers + 1
         })
-
 
         // add markers to map
         map.addLayer( markerclusters )
 
-        // if we have markers, zoom to them, otherwise zoom out
-        if ( numMarkers > 0) {
-            map.fitBounds( markerclusters.getBounds() )
-        } else {
-            map.setView( config.mapCenter, config.mapZoom)
-
-            alert('No projects fit the criteria.')
-        }
-
-
     }
 
+    function countMarkersFromState(state) {
+        let arr = []
 
+        map.eachLayer(function (layer) {
+            if ( layer === markerclusters ) {
+                layer.eachLayer( function( marker ){
+                    if ( marker.feature.properties.State === state ) {
+                        arr.push( marker )
+                    }
+                })
+            }
+        })
+        $('#count-alaska').text( arr.length )
+        //console.log('found '+ arr.length + ' markers from ' + state)
+    }
+
+    /**
+     * Zoom the map to show all markers if there are any.
+     */
+    function zoomMapBounds( markerLayer, cfg ) {
+
+        if ( markerLayer.getLayers().length ) {
+            map.fitBounds( markerLayer.getBounds() )
+        } else {
+            map.setView( cfg.mapCenter, cfg.mapZoom )
+            alert('No projects fit the criteria.')
+        }
+    }
 
     /**
      * clearMarkers - remove the marker layer from the map
@@ -238,7 +280,7 @@
         if ( markerLayer !== undefined ) {
             map.removeLayer( markerLayer )
         } else {
-            console.log('marker layer was undefined. nothing to remove.')
+            console.log('Marker layer was undefined. Nothing to remove.')
         }
     }
 
@@ -284,9 +326,7 @@
 
         ismatch = haystack.length ? haystack.some( option => needles.indexOf( option ) >= 0 ) : true
         // if ( haystack.length ) {
-
         //   ismatch   = haystack.some( option => needles.indexOf( option ) >= 0 )
-
         // }
 
         return ismatch
@@ -319,11 +359,19 @@
         datatable.draw()
     }
 
-    // delegated event handler for when inputs are built out and changed
-    $('#ui-controls').on( 'change','input, select', function(){
-        clearMarkers( markerclusters )
-        getFilterValues( config )
-        renderMapMarkers( data )
-        filterDataTable()
+    /**
+     * 	Event handler for Alaska UI button
+     */
+    $( '.map-navigation' ).on( 'click', 'a', e => {
+        e.preventDefault()
+
+        let pos = $(e.delegateTarget).children().data('position')
+
+        if (pos) {
+            var loc = pos.split(',')
+            map.setView(loc, 4)
+        }
     })
+
+
 })()
