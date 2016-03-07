@@ -30,14 +30,18 @@ gulp.task('babel', function() {
 gulp.task('usemin', function() {
     return gulp.src('src/index.html')
         .pipe(usemin({
-            //assetsDir: 'public',
+            //assetsDir: 'images',
             css: [cssmin(), 'concat'],
             js: [uglify(), 'concat']
         }))
         .pipe(gulp.dest('dist'));
 });
 
-
+// copy images to dist/
+gulp.task('copyfiles', function() {
+    gulp.src('src/client/images/**')
+    .pipe(gulp.dest('dist/client/images'));
+});
 
 gulp.task('lint', function () {
     return gulp.src(['src/client/*.es6.js','!node_modules/**'])
@@ -49,9 +53,9 @@ gulp.task('lint', function () {
 // Concat & Minify JS
 gulp.task('uglify', function(){
   return gulp.src('src/client/js/app.js')
-        //.pipe(concat('app.js'))
         .pipe(sourcemaps.init())
-        .pipe(rename('app.min.js'))
+        .pipe(concat('app.min.js'))
+        //.pipe(rename('app.min.js'))
         .pipe(uglify())
         //.pipe(uglify( {compress: {drop_debugger:false} }))
         .pipe(sourcemaps.write('./'))
@@ -88,6 +92,5 @@ gulp.task('deploy', function(cb){
 });
 
 gulp.task('build', function(cb){
-    runSequence('clean', 'lint','babel', 'usemin', 'clean-es5', cb)
+    runSequence('clean', 'copyfiles', 'lint','babel', 'usemin' /*, 'clean-es5'*/, cb)
 });
-
