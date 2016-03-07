@@ -24,12 +24,15 @@ $ npm install
 ```
 
 ## Build
+To build the distribution, run the build task.
 
 ```bash
 $ gulp build
 ```
+(You can run the ```gulp watch``` task to continually build.)
 
 ## Deploy
+To deploy to http://nrel.github.io/eere-ie-projects-map/ run the deploy task
 
 ```bash
 $ gulp deploy
