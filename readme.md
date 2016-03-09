@@ -37,3 +37,7 @@ To deploy to http://nrel.github.io/eere-ie-projects-map/ run the deploy task
 ```bash
 $ gulp deploy
 ```
+
+### In the wild
+The map lives here: http://energy.gov/indianenergy/tribal-energy-projects-map
+
