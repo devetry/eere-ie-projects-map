@@ -7,7 +7,7 @@
       , url: 'https://docs.google.com/spreadsheet/pub'
       , qstring: '?hl=en_US&hl=en_US&output=html&key='
       , uiFilters: { 'State': [], 'Technology': [], 'Category': [] }
-      , mapCenter: [ 39.81,-99.84 ]
+      , mapCenter: [37.81, -95.84]
       , mapZoom: 4
       , mapboxToken: 'pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw'
       , tileLayer: 'mapbox.streets'
