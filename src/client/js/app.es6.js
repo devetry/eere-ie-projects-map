@@ -334,6 +334,16 @@
 
 
     /**
+     * escapeRegExp - make a string safe for use as a regular expression
+     * @param  {string} str input string
+     * @return {string}    string with special regex characters escaped
+     */
+    function escapeRegExp(str) {
+        return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+    }
+
+
+    /**
      * filterDataTable - use datatables search/filter function to filter the table
      * @param  {[type]} terms [description]
      *
@@ -347,7 +357,11 @@
 
             // build out regex terms that match the word/phrase exactly
             // eg don't let "other" match "geothermal"
-            let terms = config.uiFilters[ filter ].map( val => `^${val}$` )
+            // and escape out control characters
+            let terms = config.uiFilters[ filter ].map( val => {
+                val = escapeRegExp(val)
+                return `^${val}$`
+            })
 
             // convert array to pipe-separated string for regex search
             let regexterms = terms.join('|')
