@@ -139,7 +139,7 @@
     function renderMap(cfg) {
         L.mapbox.accessToken = cfg.mapboxToken;
 
-        map = L.mapbox.map(cfg.mapContainer).setView(cfg.mapCenter, cfg.mapZoom).addLayer(L.mapbox.tileLayer(cfg.tileLayer));
+        map = L.mapbox.map(cfg.mapContainer).setView(cfg.mapCenter, cfg.mapZoom).addLayer(L.mapbox.styleLayer(cfg.tileLayer));
     }
 
     /**
