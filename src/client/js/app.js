@@ -11,7 +11,7 @@
         mapCenter: [37.81, -95.84],
         mapZoom: 4,
         mapboxToken: 'pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw',
-        tileLayer: 'mapbox.streets',
+        tileLayer: 'mapbox://styles/energy/ckhc7eaqv0mjm19p3yr4jtlcw',
         mapContainer: 'map',
         datatableContainer: 'datatable',
         dataHeaders: ['Project', 'Tribe', 'State', 'Year', 'Assistance Type', 'Category', 'Technology']
@@ -139,7 +139,7 @@
     function renderMap(cfg) {
         L.mapbox.accessToken = cfg.mapboxToken;
 
-        map = L.mapbox.map(cfg.mapContainer).setView(cfg.mapCenter, cfg.mapZoom).addLayer(L.mapbox.tileLayer(cfg.tileLayer));
+        map = L.mapbox.map(cfg.mapContainer).setView(cfg.mapCenter, cfg.mapZoom).addLayer(L.mapbox.styleLayer(cfg.tileLayer));
     }
 
     /**
