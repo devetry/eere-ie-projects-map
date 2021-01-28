@@ -8,19 +8,20 @@
         url: 'https://docs.google.com/spreadsheet/pub',
         qstring: '?hl=en_US&hl=en_US&output=html&key=',
         uiFilters: { 'State': [], 'Technology': [], 'Category': [] },
-        mapCenter: [37.81, -95.84],
-        mapZoom: 4,
+        mapCenter: [-95.84, 37.81 ],
+        mapZoom: 3,
         mapboxToken: 'pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw',
+        // tileLayer: 'mapbox.streets',
         tileLayer: 'mapbox://styles/energy/ckhc7eaqv0mjm19p3yr4jtlcw',
         mapContainer: 'map',
         datatableContainer: 'datatable',
         dataHeaders: ['Project', 'Tribe', 'State', 'Year', 'Assistance Type', 'Category', 'Technology']
     };
 
-    var map = undefined,
-        datatable = undefined,
-        data = undefined,
-        markerclusters = undefined;
+    var map = void 0,
+        datatable = void 0,
+        data = void 0,
+        markerclusters = void 0;
 
     window.onload = function () {
         init(config);
@@ -136,12 +137,22 @@
      * @return {[type]} [description]
      *
      */
+    // function renderMap(cfg) {
+    //     L.mapbox.accessToken = cfg.mapboxToken;        
+    //     map = L.mapbox.map(cfg.mapContainer).setView(cfg.mapCenter, cfg.mapZoom).addLayer(L.mapbox.styleLayer(cfg.tileLayer));
+    //     // map = L.mapbox.map(cfg.mapContainer).setView(cfg.mapCenter, cfg.mapZoom).addLayer(L.mapbox.tileLayer(cfg.tileLayer));
+    // }
     function renderMap(cfg) {
-        L.mapbox.accessToken = cfg.mapboxToken;
 
-        map = L.mapbox.map(cfg.mapContainer).setView(cfg.mapCenter, cfg.mapZoom).addLayer(L.mapbox.styleLayer(cfg.tileLayer));
+        mapboxgl.accessToken = 'pk.eyJ1IjoibnJlbC1jb21hcHMiLCJhIjoiY2pveGNkcmFrMjdjeDNwcGR4cTF3c3ZhZiJ9.zrGPMAY7OCtiwuSXTWv0fQ';
+        var map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: cfg.mapCenter,
+        zoom: cfg.mapZoom
+        })
+        
     }
-
     /**
      *
      * getFilterValues - check the state of our UI elements
@@ -283,7 +294,7 @@
         var bln = true;
 
         Object.keys(filters).forEach(function (filter) {
-            var props = undefined;
+            var props = void 0;
 
             if (feature.properties[filter]) {
                 props = feature.properties[filter].split(','); // convert comma separated string to array
@@ -304,8 +315,8 @@
      * @return {boolean} true if any of needles are in haystack
      */
     function matches(needles, haystack) {
-
-        var ismatch = undefined;
+        console.log('bey')
+        var ismatch = void 0;
 
         ismatch = haystack.length ? haystack.some(function (option) {
             return needles.indexOf(option) >= 0;
