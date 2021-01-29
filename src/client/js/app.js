@@ -145,7 +145,7 @@
     function renderMap(cfg) {
 
         mapboxgl.accessToken = 'pk.eyJ1IjoibnJlbC1jb21hcHMiLCJhIjoiY2pveGNkcmFrMjdjeDNwcGR4cTF3c3ZhZiJ9.zrGPMAY7OCtiwuSXTWv0fQ';
-        var map = new mapboxgl.Map({
+        map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/streets-v11',
         center: cfg.mapCenter,
@@ -181,65 +181,107 @@
      *
      */
     function renderMapMarkers(dataarray) {
-
-        /**
-         * Custom function for creating icons.
-         * Allows us to override cluster size breakpoints when we init MarkerCluster.
-         */
-        function iconCreateFunction(cluster) {
-            var childCount = cluster.getChildCount();
-
-            var c = ' marker-cluster-';
-            if (childCount < 10) {
-                c += 'small';
-            } else if (childCount < 50) {
-                c += 'medium';
-            } else {
-                c += 'large';
-            }
-
-            return new L.DivIcon({
-                html: '<div><span>' + childCount + '</span></div>',
-                className: 'marker-cluster' + c,
-                iconSize: new L.Point(40, 40)
-            });
-        }
-
-        markerclusters = new L.MarkerClusterGroup({
-            spiderfyOnMaxZoom: true,
-            singleMarkerMode: true,
-            disableClusteringAtZoom: 20 // so we can see markers with identical lat/lon
-            , iconCreateFunction: iconCreateFunction
-        });
-
-        // manually fire spiderfy
-        // markerclusters.on( 'clusterclick', function (e) { e.layer.spiderfy() })
-
         var geojsondata = GeoJSON.parse(dataarray, { Point: ['Latitude', 'Longitude'] }); //todo: abstract out lat/lon field
+        map.on('load', function() {
+            map.addSource('locations', {
+                type: 'geojson',
+                data: geojsondata,
+                cluster: true,
+                clusterMaxZoom: 14,
+                clusterRadius: 50
+            })
+    
+            map.addLayer({
+                id: 'clusters',
+                type: 'circle',
+                source: 'locations',
+                filter: ['has', 'point_count'],
+                paint: {
+                    // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
+                    // with three steps to implement three types of circles:
+                    //   * Blue, 20px circles when point count is less than 100
+                    //   * Yellow, 30px circles when point count is between 100 and 750
+                    //   * Pink, 40px circles when point count is greater than or equal to 750
+                    'circle-color': [
+                    'step',
+                    ['get', 'point_count'],
+                    '#51bbd6',
+                    100,
+                    '#f1f075',
+                    750,
+                    '#f28cb1'
+                    ],
+                    'circle-radius': [
+                    'step',
+                    ['get', 'point_count'],
+                    20,
+                    100,
+                    30,
+                    750,
+                    40
+                    ]
+                    }
+            })
+        })
+        
+        // /**
+        //  * Custom function for creating icons.
+        //  * Allows us to override cluster size breakpoints when we init MarkerCluster.
+        //  */
+        // function iconCreateFunction(cluster) {
+        //     var childCount = cluster.getChildCount();
 
-        var featureLayer = L.mapbox.featureLayer().setGeoJSON(geojsondata);
+        //     var c = ' marker-cluster-';
+        //     if (childCount < 10) {
+        //         c += 'small';
+        //     } else if (childCount < 50) {
+        //         c += 'medium';
+        //     } else {
+        //         c += 'large';
+        //     }
 
-        // filter data
-        featureLayer.setFilter(function (feature) {
-            return filterData(feature, config.uiFilters);
-        });
+        //     return new L.DivIcon({
+        //         html: '<div><span>' + childCount + '</span></div>',
+        //         className: 'marker-cluster' + c,
+        //         iconSize: new L.Point(40, 40)
+        //     });
+        // }
 
-        // add markers and popup content to markercluster group
-        featureLayer.eachLayer(function (marker) {
+        // markerclusters = new L.MarkerClusterGroup({
+        //     spiderfyOnMaxZoom: true,
+        //     singleMarkerMode: true,
+        //     disableClusteringAtZoom: 20 // so we can see markers with identical lat/lon
+        //     , iconCreateFunction: iconCreateFunction
+        // });
 
-            var content = '<h3>' + marker.feature.properties.Tribe + '</h3>';
+        // // manually fire spiderfy
+        // // markerclusters.on( 'clusterclick', function (e) { e.layer.spiderfy() })
 
-            content += '<h4>' + marker.feature.properties.Project + '</h4>';
+        // var geojsondata = GeoJSON.parse(dataarray, { Point: ['Latitude', 'Longitude'] }); //todo: abstract out lat/lon field
 
-            marker.bindPopup(content);
+        // var featureLayer = L.mapbox.featureLayer().setGeoJSON(geojsondata);
 
-            marker.setIcon(L.mapbox.marker.icon({}));
+        // // filter data
+        // featureLayer.setFilter(function (feature) {
+        //     return filterData(feature, config.uiFilters);
+        // });
 
-            markerclusters.addLayer(marker);
-        });
+        // // add markers and popup content to markercluster group
+        // featureLayer.eachLayer(function (marker) {
 
-        // add markers to map
-        map.addLayer(markerclusters);
+        //     var content = '<h3>' + marker.feature.properties.Tribe + '</h3>';
+
+        //     content += '<h4>' + marker.feature.properties.Project + '</h4>';
+
+        //     marker.bindPopup(content);
+
+        //     marker.setIcon(L.mapbox.marker.icon({}));
+
+        //     markerclusters.addLayer(marker);
+        // });
+
+        // // add markers to map
+        // map.addLayer(markerclusters);
     }
 
     function countMarkersFromState(state) {
@@ -372,10 +414,14 @@
         e.preventDefault();
 
         var pos = $(e.delegateTarget).children().data('position');
-
+        console.log('pos',pos)
         if (pos) {
-            var loc = pos.split(',');
-            map.setView(loc, 4);
+            var loc = pos.split(',').reverse();
+
+            map.easeTo({
+                center: loc,
+                zoom: 3
+            });
         }
     });
 })();
