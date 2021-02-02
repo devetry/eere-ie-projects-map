@@ -16,19 +16,19 @@
         },
         NULL_FUNCTION = function () {},
         options = {
-          animate: false, // to animate the spiral
-          animationSpeed: 0, // animation speed in milliseconds
+          animate: true, // to animate the spiral
+          animationSpeed: 30, // animation speed in milliseconds
           customPin: false, // If false, sets a default icon for pins in spider legs.
           initializeLeg: NULL_FUNCTION,
           onClick: NULL_FUNCTION,
           // --- <SPIDER TUNING Params>
           // circleSpiralSwitchover: show spiral instead of circle from this marker count upwards
           //                        0 -> always spiral; Infinity -> always circle
-          circleSpiralSwitchover: 9,
-          circleFootSeparation: 25, // related to circumference of circle
-          spiralFootSeparation: 28, // related to size of spiral (experiment!)
-          spiralLengthStart: 15, // ditto
-          spiralLengthFactor: 4, // ditto
+          circleSpiralSwitchover: 0,
+          circleFootSeparation: 35, // related to circumference of circle
+          spiralFootSeparation: 50, // related to size of spiral (experiment!)
+          spiralLengthStart: 40, // ditto
+          spiralLengthFactor: 8, // ditto
           // ---
         },
         twoPi = Math.PI * 2,
@@ -57,7 +57,6 @@
           var elements = createMarkerElements(spiderLegParam, feature);
           var mapboxMarker;
           var spiderLeg;
-  
           mapboxMarker = new mapboxgl.Marker(elements.container)
             .setLngLat(latLng);
   

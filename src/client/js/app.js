@@ -180,20 +180,18 @@
 
         $(spiderLeg.elements.pin).append($spiderPinCustom);
         $spiderPinCustom.css({
-          width: "10px",
-          height: "10px",
-          "margin-left": "-5px",
-          "margin-top": "-5px",
-          "background-color": "green",
-          opacity: 0.8,
+          width: "30px",
+          height: "30px",
+          "margin-left": "-15px",
+          "margin-top": "-15px",
+          "background-color": "rgba(110, 204, 57, 1)",
+          "border-radius": "50%",
         });
         let content = "<h4>" + marker.Tribe + "</h4>";
         content += "<h5>" + marker.Project + "</h5>";
         var popup = new mapboxgl.Popup({
-          // closeButton: true,
           closeOnClick: true,
           offset: MapboxglSpiderifier.popupOffsetForSpiderLeg(spiderLeg),
-          // }).addTo(map);
         }).addTo(map);
         popup.setHTML(content);
         spiderLeg.mapboxMarker.setPopup(popup);
