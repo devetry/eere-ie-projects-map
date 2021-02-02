@@ -32,6 +32,8 @@
     data = void 0,
     markerclusters = void 0;
 
+  var spiderifier;
+
   window.onload = function () {
     init(config);
   };
@@ -165,6 +167,37 @@
       style: "mapbox://styles/mapbox/streets-v11",
       center: cfg.mapCenter,
       zoom: cfg.mapZoom,
+      maxZoom: 13,
+    });
+
+    spiderifier = new MapboxglSpiderifier(map, {
+      customPin: true,
+      initializeLeg: function (spiderLeg) {
+        var $spiderPinCustom = $("<div>", { class: "spider-point-circle" });
+        var marker = spiderLeg.feature;
+
+        console.log("spider leg is", spiderLeg);
+
+        $(spiderLeg.elements.pin).append($spiderPinCustom);
+        $spiderPinCustom.css({
+          width: "10px",
+          height: "10px",
+          "margin-left": "-5px",
+          "margin-top": "-5px",
+          "background-color": "green",
+          opacity: 0.8,
+        });
+        let content = "<h4>" + marker.Tribe + "</h4>";
+        content += "<h5>" + marker.Project + "</h5>";
+        var popup = new mapboxgl.Popup({
+          // closeButton: true,
+          closeOnClick: true,
+          offset: MapboxglSpiderifier.popupOffsetForSpiderLeg(spiderLeg),
+          // }).addTo(map);
+        }).addTo(map);
+        popup.setHTML(content);
+        spiderLeg.mapboxMarker.setPopup(popup);
+      },
     });
   }
   /**
@@ -267,6 +300,10 @@
       });
 
       map.on("click", "clusters", function (e) {
+        if (e.originalEvent.srcElement.className === "spider-point-circle") {
+          return;
+        }
+
         var features = map.queryRenderedFeatures(e.point, {
           layers: ["clusters"],
         });
@@ -275,12 +312,29 @@
           .getSource("locations")
           .getClusterExpansionZoom(clusterId, function (err, zoom) {
             if (err) return;
-
-            map.easeTo({
-              center: features[0].geometry.coordinates,
-              zoom: zoom,
-            });
+            if (map.getZoom() !== 13) {
+              map.easeTo({
+                center: features[0].geometry.coordinates,
+                zoom: zoom,
+              });
+            }
           });
+
+        if (!features.length || map.getZoom() !== 13) {
+          return;
+        } else {
+          map
+            .getSource("locations")
+            .getClusterLeaves(clusterId, 100, 0, function (err, leafFeatures) {
+              if (err) {
+                return console.error("problem with leaf features", err);
+              }
+              var markers = _.map(leafFeatures, function (leafFeature) {
+                return leafFeature.properties;
+              });
+              spiderifier.spiderfy(features[0].geometry.coordinates, markers);
+            });
+        }
       });
 
       // When a click event occurs on a feature in
@@ -289,18 +343,14 @@
       // description HTML from its properties.
       map.on("click", "unclustered-point", function (e) {
         var coordinates = e.features[0].geometry.coordinates.slice();
-        let content = '<h4>' + e.features[0].properties.Tribe + '</h4>';
-        console.log(e.features[0].properties.Project)
-        content += '<h5>' + e.features[0].properties.Project + '</h5>';
-        
+        let content = "<h4>" + e.features[0].properties.Tribe + "</h4>";
+        content += "<h5>" + e.features[0].properties.Project + "</h5>";
+
         while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
           coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
         }
 
-        new mapboxgl.Popup()
-          .setLngLat(coordinates)
-          .setHTML(content)
-          .addTo(map);
+        new mapboxgl.Popup().setLngLat(coordinates).setHTML(content).addTo(map);
       });
     });
 
@@ -369,9 +419,9 @@
     console.log(dataarray);
     console.log(state);
     let count = 0;
-    dataarray.forEach(point => {
-        if(point.State === state) count++;
-    })
+    dataarray.forEach((point) => {
+      if (point.State === state) count++;
+    });
     $("#count-alaska").text(count);
   }
 
