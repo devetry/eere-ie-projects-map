@@ -299,6 +299,10 @@
         },
       });
 
+      map.on('zoomstart', function(){
+        spiderifier.unspiderfy();
+      });
+
       map.on("click", "clusters", function (e) {
         if (e.originalEvent.srcElement.className === "spider-point-circle") {
           return;
