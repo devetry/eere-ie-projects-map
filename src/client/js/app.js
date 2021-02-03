@@ -30,7 +30,11 @@
   var map = void 0,
     datatable = void 0,
     data = void 0,
+    getLayer = void 0,
     markerclusters = void 0;
+    
+  
+  let copyMap = void 0;
 
   var spiderifier;
 
@@ -97,13 +101,7 @@
     });
 
     // event handler for inputs
-    $ui.on("change", "input, select", function () {
-      clearMarkers(markerclusters);
-      getFilterValues(config);
-      renderMapMarkers(data);
-      zoomMapBounds(markerclusters, config);
-      filterDataTable();
-    });
+    
   }
 
   /**
@@ -223,11 +221,91 @@
    * @param  {array} data -
    *
    */
-  function renderMapMarkers(dataarray) {
-    var geojsondata = GeoJSON.parse(dataarray, {
+
+  function updateSource(dataarray) {
+    let geojsondata = GeoJSON.parse(dataarray, {
       Point: ["Latitude", "Longitude"],
     }); //todo: abstract out lat/lon field
+
+    geojsondata.features = geojsondata.features.filter(feat => filterData(feat, config.uiFilters));
+    console.log(geojsondata.features)
+
+    map.getSource('locations').setData(geojsondata)
+    // map.addSource("locations", {
+    //   type: "geojson",
+    //   data: geojsondata,
+    //   cluster: true,
+    //   clusterMaxZoom: 14,
+    //   clusterRadius: 50,
+    // });
+
+    // map.addLayer({
+    //   id: "clusters",
+    //   type: "circle",
+    //   source: "locations",
+    //   filter: ["has", "point_count"],
+    //   paint: {
+    //     "circle-color": [
+    //       "step",
+    //       ["get", "point_count"],
+    //       "rgba(110, 204, 57, 0.6)",
+    //       10,
+    //       "rgba(240, 194, 12, 0.6)",
+    //       50,
+    //       "rgba(241, 128, 23, 0.6)",
+    //     ],
+    //     "circle-radius": 20,
+    //   },
+    // });
+
+    // map.addLayer({
+    //   id: "cluster-count",
+    //   type: "symbol",
+    //   source: "locations",
+    //   filter: ["has", "point_count"],
+    //   layout: {
+    //     "text-field": "{point_count_abbreviated}",
+    //     "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+    //     "text-size": 12,
+    //   },
+    // });
+
+    // map.addLayer({
+    //   id: "unclustered-point",
+    //   type: "circle",
+    //   source: "locations",
+    //   filter: ["!", ["has", "point_count"]],
+    //   paint: {
+    //     "circle-color": "rgba(110, 204, 57, 0.6)",
+    //     "circle-radius": 20,
+    //   },
+    // });
+
+    // map.addLayer({
+    //   id: "unclustered-count",
+    //   type: "symbol",
+    //   source: "locations",
+    //   filter: ["!", ["has", "point_count"]],
+    //   layout: {
+    //     "text-field": "1",
+    //     "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+    //     "text-size": 12,
+    //   },
+    // });
+  }
+  
+  function renderMapMarkers(dataarray) {
+    
+
+    // geojsondata.features = geojsondata.features.filter((feature) => filterData(feature, config.uiFilters))
+
+    var $ui = $("#ui-controls");
+    console.log($ui)
     map.on("load", function () {
+      let geojsondata = GeoJSON.parse(dataarray, {
+        Point: ["Latitude", "Longitude"],
+      }); //todo: abstract out lat/lon field
+
       map.addSource("locations", {
         type: "geojson",
         data: geojsondata,
@@ -235,6 +313,8 @@
         clusterMaxZoom: 14,
         clusterRadius: 50,
       });
+
+      // renderLayers(dataarray);
 
       map.addLayer({
         id: "clusters",
@@ -290,8 +370,20 @@
         },
       });
 
+
       map.on('zoomstart', function(){
+        console.log(map)
         spiderifier.unspiderfy();
+      });
+
+      $ui.on("change", "input, select", function () {      
+        // clearMarkers(['clusters', 'unclustered-point']);
+        getFilterValues(config);
+        // renderMapMarkers(data);
+        updateSource(data)
+        // filterMapMarkers();
+        // zoomMapBounds(markerclusters, config);
+        filterDataTable();
       });
 
       map.on("click", "clusters", function (e) {
@@ -348,65 +440,6 @@
         new mapboxgl.Popup().setLngLat(coordinates).setHTML(content).addTo(map);
       });
     });
-
-    // /**
-    //  * Custom function for creating icons.
-    //  * Allows us to override cluster size breakpoints when we init MarkerCluster.
-    //  */
-    // function iconCreateFunction(cluster) {
-    //     var childCount = cluster.getChildCount();
-
-    //     var c = ' marker-cluster-';
-    //     if (childCount < 10) {
-    //         c += 'small';
-    //     } else if (childCount < 50) {
-    //         c += 'medium';
-    //     } else {
-    //         c += 'large';
-    //     }
-
-    //     return new L.DivIcon({
-    //         html: '<div><span>' + childCount + '</span></div>',
-    //         className: 'marker-cluster' + c,
-    //         iconSize: new L.Point(40, 40)
-    //     });
-    // }
-
-    // markerclusters = new L.MarkerClusterGroup({
-    //     spiderfyOnMaxZoom: true,
-    //     singleMarkerMode: true,
-    //     disableClusteringAtZoom: 20 // so we can see markers with identical lat/lon
-    //     , iconCreateFunction: iconCreateFunction
-    // });
-
-    // // manually fire spiderfy
-    // // markerclusters.on( 'clusterclick', function (e) { e.layer.spiderfy() })
-
-    // var geojsondata = GeoJSON.parse(dataarray, { Point: ['Latitude', 'Longitude'] }); //todo: abstract out lat/lon field
-
-    // var featureLayer = L.mapbox.featureLayer().setGeoJSON(geojsondata);
-
-    // // filter data
-    // featureLayer.setFilter(function (feature) {
-    //     return filterData(feature, config.uiFilters);
-    // });
-
-    // // add markers and popup content to markercluster group
-    // featureLayer.eachLayer(function (marker) {
-
-    //     var content = '<h3>' + marker.feature.properties.Tribe + '</h3>';
-
-    //     content += '<h4>' + marker.feature.properties.Project + '</h4>';
-
-    //     marker.bindPopup(content);
-
-    //     marker.setIcon(L.mapbox.marker.icon({}));
-
-    //     markerclusters.addLayer(marker);
-    // });
-
-    // // add markers to map
-    // map.addLayer(markerclusters);
   }
 
   function countMarkersFromState(state, dataarray) {
@@ -436,13 +469,10 @@
    * clearMarkers - remove the marker layer from the map
    * @param  {object} markerLayer
    */
-  function clearMarkers(markerLayer) {
-    if (markerLayer !== undefined) {
-      map.removeLayer(markerLayer);
-    } else {
-      console.log("Marker layer was undefined. Nothing to remove.");
-    }
-  }
+
+
+
+
 
   /**
    * filterData - find a value within an object's keys
