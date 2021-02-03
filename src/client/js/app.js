@@ -31,10 +31,7 @@
     datatable = void 0,
     data = void 0,
     getLayer = void 0,
-    markerclusters = void 0;
-    
-  
-  let copyMap = void 0;
+    markerclusters = void 0
 
   var spiderifier;
 
@@ -152,17 +149,13 @@
    * @return {[type]} [description]
    *
    */
-  // function renderMap(cfg) {
-  //     L.mapbox.accessToken = cfg.mapboxToken;
-  //     map = L.mapbox.map(cfg.mapContainer).setView(cfg.mapCenter, cfg.mapZoom).addLayer(L.mapbox.styleLayer(cfg.tileLayer));
-  //     // map = L.mapbox.map(cfg.mapContainer).setView(cfg.mapCenter, cfg.mapZoom).addLayer(L.mapbox.tileLayer(cfg.tileLayer));
-  // }
+
   function renderMap(cfg) {
     mapboxgl.accessToken =
       "pk.eyJ1IjoibnJlbC1jb21hcHMiLCJhIjoiY2pveGNkcmFrMjdjeDNwcGR4cTF3c3ZhZiJ9.zrGPMAY7OCtiwuSXTWv0fQ";
     map = new mapboxgl.Map({
       container: "map",
-      style: "mapbox://styles/mapbox/streets-v11",
+      style: "mapbox://styles/mapbox/light-v10",
       center: cfg.mapCenter,
       zoom: cfg.mapZoom,
       maxZoom: 13,
@@ -173,8 +166,6 @@
       initializeLeg: function (spiderLeg) {
         var $spiderPinCustom = $("<div>", { class: "spider-point-circle" });
         var marker = spiderLeg.feature;
-
-        console.log("spider leg is", spiderLeg);
 
         $(spiderLeg.elements.pin).append($spiderPinCustom);
         $spiderPinCustom.css({
@@ -231,76 +222,13 @@
     console.log(geojsondata.features)
 
     map.getSource('locations').setData(geojsondata)
-    // map.addSource("locations", {
-    //   type: "geojson",
-    //   data: geojsondata,
-    //   cluster: true,
-    //   clusterMaxZoom: 14,
-    //   clusterRadius: 50,
-    // });
-
-    // map.addLayer({
-    //   id: "clusters",
-    //   type: "circle",
-    //   source: "locations",
-    //   filter: ["has", "point_count"],
-    //   paint: {
-    //     "circle-color": [
-    //       "step",
-    //       ["get", "point_count"],
-    //       "rgba(110, 204, 57, 0.6)",
-    //       10,
-    //       "rgba(240, 194, 12, 0.6)",
-    //       50,
-    //       "rgba(241, 128, 23, 0.6)",
-    //     ],
-    //     "circle-radius": 20,
-    //   },
-    // });
-
-    // map.addLayer({
-    //   id: "cluster-count",
-    //   type: "symbol",
-    //   source: "locations",
-    //   filter: ["has", "point_count"],
-    //   layout: {
-    //     "text-field": "{point_count_abbreviated}",
-    //     "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
-    //     "text-size": 12,
-    //   },
-    // });
-
-    // map.addLayer({
-    //   id: "unclustered-point",
-    //   type: "circle",
-    //   source: "locations",
-    //   filter: ["!", ["has", "point_count"]],
-    //   paint: {
-    //     "circle-color": "rgba(110, 204, 57, 0.6)",
-    //     "circle-radius": 20,
-    //   },
-    // });
-
-    // map.addLayer({
-    //   id: "unclustered-count",
-    //   type: "symbol",
-    //   source: "locations",
-    //   filter: ["!", ["has", "point_count"]],
-    //   layout: {
-    //     "text-field": "1",
-    //     "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
-    //     "text-size": 12,
-    //   },
-    // });
+    zoomMapBounds(geojsondata.features, config);
   }
   
   function renderMapMarkers(dataarray) {
     
-
-    // geojsondata.features = geojsondata.features.filter((feature) => filterData(feature, config.uiFilters))
-
     var $ui = $("#ui-controls");
-    console.log($ui)
+
     map.on("load", function () {
       let geojsondata = GeoJSON.parse(dataarray, {
         Point: ["Latitude", "Longitude"],
@@ -313,8 +241,6 @@
         clusterMaxZoom: 14,
         clusterRadius: 50,
       });
-
-      // renderLayers(dataarray);
 
       map.addLayer({
         id: "clusters",
@@ -372,16 +298,12 @@
 
 
       map.on('zoomstart', function(){
-        console.log(map)
         spiderifier.unspiderfy();
       });
 
       $ui.on("change", "input, select", function () {      
-        // clearMarkers(['clusters', 'unclustered-point']);
         getFilterValues(config);
-        // renderMapMarkers(data);
         updateSource(data)
-        // filterMapMarkers();
         // zoomMapBounds(markerclusters, config);
         filterDataTable();
       });
@@ -443,9 +365,6 @@
   }
 
   function countMarkersFromState(state, dataarray) {
-    var arr = [];
-    console.log(dataarray);
-    console.log(state);
     let count = 0;
     dataarray.forEach((point) => {
       if (point.State === state) count++;
@@ -456,11 +375,20 @@
   /**
    * Zoom the map to show all markers if there are any.
    */
-  function zoomMapBounds(markerLayer, cfg) {
-    if (markerLayer.getLayers().length) {
-      map.fitBounds(markerLayer.getBounds());
+  function zoomMapBounds(features, cfg) {
+
+    var bounds = new mapboxgl.LngLatBounds();
+
+    features.forEach(function(feature) {
+        bounds.extend(feature.geometry.coordinates);
+    });
+    if (features.length) {
+      map.fitBounds(bounds, {maxZoom: 5, padding: 100});
     } else {
-      map.setView(cfg.mapCenter, cfg.mapZoom);
+      map.easeTo({
+        center: cfg.mapCenter,
+        zoom: cfg.mapZoom,
+      });
       alert("No projects fit the criteria.");
     }
   }
@@ -469,11 +397,6 @@
    * clearMarkers - remove the marker layer from the map
    * @param  {object} markerLayer
    */
-
-
-
-
-
   /**
    * filterData - find a value within an object's keys
    * @param  {object} feature
@@ -505,7 +428,6 @@
    * @return {boolean} true if any of needles are in haystack
    */
   function matches(needles, haystack) {
-    console.log("bey");
     var ismatch = void 0;
 
     ismatch = haystack.length
@@ -513,10 +435,6 @@
           return needles.indexOf(option) >= 0;
         })
       : true;
-    // if ( haystack.length ) {
-    //   ismatch   = haystack.some( option => needles.indexOf( option ) >= 0 )
-    // }
-
     return ismatch;
   }
 

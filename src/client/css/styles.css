@@ -106,7 +106,7 @@ table.dataTable.table-condensed .sorting_desc:after {
     position: absolute;
     bottom: 0;
     left: 0;
-    width: 2px;
+    width: 1px;
     background-color: #343434;
     opacity: 0.45;
     transform-origin: bottom;
