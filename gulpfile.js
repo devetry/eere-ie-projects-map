@@ -37,7 +37,8 @@ function babeltask() {
     return gulp.src('src/client/js/app.es6.js')
         .pipe(babel({presets: ["@babel/preset-env"]}))
         .pipe(rename('app.js'))
-        .pipe(gulp.dest('dist/client/js'))
+        // this below should be src...
+        .pipe(gulp.dest('src/client/js'))
 }
 
 function useminfiles() {
@@ -62,6 +63,9 @@ function scriptsLint() {
         .pipe(eslint.format())
         .pipe(eslint.failAfterError())
 }
+// scripts lint
+// babeltask -- instaead of pu
+// scripts
 
 function scripts() {
     return (
@@ -72,6 +76,7 @@ function scripts() {
             .pipe(uglify())
             .pipe(sourcemaps.write('./'))
             .pipe(gulp.dest('dist/client/js'))
+            // new src to delete app.js from src folder
             // .pipe(browsersync.stream())
     );
 }
@@ -91,6 +96,11 @@ function cleanDist() {
     // return del(["./dist/*"]);
 }
 
+function cleanAppJs() {
+    return gulp.src('src/client/js/app.js', {read: false})
+        .pipe(clean());
+}
+
 gulp.task('clean-es5', function () {
     return gulp.src('src/client/js/app.js', {read: false})
         .pipe(clean())
@@ -106,7 +116,7 @@ gulp.task('deploy', function(cb){
 });
 
 const watch = gulp.parallel(watchFiles, browserSync);
-const js = gulp.series(scriptsLint, scripts);
-const build = gulp.series(cleanDist, copyfiles, css, js, babeltask, useminfiles);
+const js = gulp.series(scriptsLint, babeltask, scripts);
+const build = gulp.series(cleanDist, copyfiles, css, js, useminfiles, cleanAppJs);
 exports.watch = watch;
 exports.build = build;

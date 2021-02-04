@@ -7,10 +7,10 @@
       , url: 'https://docs.google.com/spreadsheet/pub'
       , qstring: '?hl=en_US&hl=en_US&output=html&key='
       , uiFilters: { 'State': [], 'Technology': [], 'Category': [] }
-      , mapCenter: [37.81, -95.84]
-      , mapZoom: 4
+      , mapCenter: [-95.84, 37.81]
+      , mapZoom: 3
       , mapboxToken: 'pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw'
-      , tileLayer: 'mapbox.streets'
+      , tileLayer: "mapbox://styles/energy/ckhc7eaqv0mjm19p3yr4jtlcw"
       , mapContainer: 'map'
       , datatableContainer: 'datatable'
       , dataHeaders: ['Project', 'Tribe', 'State', 'Year','Assistance Type', 'Category', 'Technology']
@@ -22,6 +22,7 @@
       , data
       , markerclusters
 
+    let spiderifier;
 
     window.onload = function() {
         init( config )
@@ -44,7 +45,7 @@
         renderMap( config )
         getFilterValues( config )
         renderMapMarkers( data )
-        countMarkersFromState('Alaska')
+        countMarkersFromState('Alaska', data)
         renderDataTable( data )
     }
 
@@ -83,13 +84,7 @@
         })
 
         // event handler for inputs
-        $ui.on( 'change', 'input, select', function(){
-            clearMarkers( markerclusters )
-            getFilterValues( config )
-            renderMapMarkers( data )
-            zoomMapBounds( markerclusters, config )
-            filterDataTable()
-        })
+        
     }
 
     /**
@@ -141,13 +136,43 @@
      * @return {[type]} [description]
      *
      */
-    function renderMap( cfg ) {
-        L.mapbox.accessToken = cfg.mapboxToken
-
-        map = L.mapbox.map( cfg.mapContainer )
-            .setView( cfg.mapCenter, cfg.mapZoom)
-            .addLayer( L.mapbox.tileLayer( cfg.tileLayer ) )
-    }
+    function renderMap(cfg) {
+        mapboxgl.accessToken =
+          "pk.eyJ1IjoibnJlbC1jb21hcHMiLCJhIjoiY2pveGNkcmFrMjdjeDNwcGR4cTF3c3ZhZiJ9.zrGPMAY7OCtiwuSXTWv0fQ";
+        map = new mapboxgl.Map({
+          container: "map",
+          style: "mapbox://styles/mapbox/light-v10",
+          center: cfg.mapCenter,
+          zoom: cfg.mapZoom,
+          maxZoom: 13,
+        });
+    
+        spiderifier = new MapboxglSpiderifier(map, {
+          customPin: true,
+          initializeLeg: function (spiderLeg) {
+            var $spiderPinCustom = $("<div>", { class: "spider-point-circle" });
+            var marker = spiderLeg.feature;
+    
+            $(spiderLeg.elements.pin).append($spiderPinCustom);
+            $spiderPinCustom.css({
+              width: "30px",
+              height: "30px",
+              "margin-left": "-15px",
+              "margin-top": "-15px",
+              "background-color": "rgba(110, 204, 57, 1)",
+              "border-radius": "50%",
+            });
+            let content = "<h4>" + marker.Tribe + "</h4>";
+            content += "<h5>" + marker.Project + "</h5>";
+            var popup = new mapboxgl.Popup({
+              closeOnClick: true,
+              offset: MapboxglSpiderifier.popupOffsetForSpiderLeg(spiderLeg),
+            }).addTo(map);
+            popup.setHTML(content);
+            spiderLeg.mapboxMarker.setPopup(popup);
+          },
+        });
+      }
 
     /**
      *
@@ -178,99 +203,187 @@
      * @param  {array} data -
      *
      */
-    function renderMapMarkers( dataarray ) {
 
-        /**
-         * Custom function for creating icons.
-         * Allows us to override cluster size breakpoints when we init MarkerCluster.
-         */
-        function iconCreateFunction( cluster ){
-            let childCount = cluster.getChildCount()
+    function updateSource(dataarray) {
+        let geojsondata = GeoJSON.parse(dataarray, {
+          Point: ["Latitude", "Longitude"],
+        }); //todo: abstract out lat/lon field
+    
+        geojsondata.features = geojsondata.features.filter(feat => filterData(feat, config.uiFilters));
+        console.log(geojsondata.features)
+    
+        map.getSource('locations').setData(geojsondata)
+        zoomMapBounds(geojsondata.features, config);
+      }
 
-            let c = ' marker-cluster-';
-            if (childCount < 10) {
-                c += 'small'
-            } else if (childCount < 50) {
-                c += 'medium'
-            } else {
-                c += 'large'
-            }
+function renderMapMarkers(dataarray) {
+    
+    var $ui = $("#ui-controls");
 
-            return new L.DivIcon({
-                html: `<div><span>${childCount}</span></div>`
-              , className: 'marker-cluster' + c
-              , iconSize: new L.Point(40, 40)
-            })
+    map.on("load", function () {
+      let geojsondata = GeoJSON.parse(dataarray, {
+        Point: ["Latitude", "Longitude"],
+      }); //todo: abstract out lat/lon field
+
+      map.addSource("locations", {
+        type: "geojson",
+        data: geojsondata,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50,
+      });
+
+      map.addLayer({
+        id: "clusters",
+        type: "circle",
+        source: "locations",
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-color": [
+            "step",
+            ["get", "point_count"],
+            "rgba(110, 204, 57, 0.6)",
+            10,
+            "rgba(240, 194, 12, 0.6)",
+            50,
+            "rgba(241, 128, 23, 0.6)",
+          ],
+          "circle-radius": 20,
+        },
+      });
+
+      map.addLayer({
+        id: "cluster-count",
+        type: "symbol",
+        source: "locations",
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": "{point_count_abbreviated}",
+          "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+          "text-size": 12,
+        },
+      });
+
+      map.addLayer({
+        id: "unclustered-point",
+        type: "circle",
+        source: "locations",
+        filter: ["!", ["has", "point_count"]],
+        paint: {
+          "circle-color": "rgba(110, 204, 57, 0.6)",
+          "circle-radius": 20,
+        },
+      });
+
+      map.addLayer({
+        id: "unclustered-count",
+        type: "symbol",
+        source: "locations",
+        filter: ["!", ["has", "point_count"]],
+        layout: {
+          "text-field": "1",
+          "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+          "text-size": 12,
+        },
+      });
+
+
+      map.on('zoomstart', function(){
+        spiderifier.unspiderfy();
+      });
+
+      $ui.on("change", "input, select", function () {      
+        getFilterValues(config);
+        updateSource(data)
+        // zoomMapBounds(markerclusters, config);
+        filterDataTable();
+      });
+
+      map.on("click", "clusters", function (e) {
+        if (e.originalEvent.srcElement.className === "spider-point-circle") {
+          return;
         }
 
-        markerclusters = new L.MarkerClusterGroup(
-            {
-                spiderfyOnMaxZoom: true
-              , singleMarkerMode:  true
-              , disableClusteringAtZoom: 20 // so we can see markers with identical lat/lon
-              , iconCreateFunction: iconCreateFunction
+        var features = map.queryRenderedFeatures(e.point, {
+          layers: ["clusters"],
+        });
+        var clusterId = features[0].properties.cluster_id;
+        map
+          .getSource("locations")
+          .getClusterExpansionZoom(clusterId, function (err, zoom) {
+            if (err) return;
+            if (map.getZoom() !== 13) {
+              map.easeTo({
+                center: features[0].geometry.coordinates,
+                zoom: zoom,
+              });
             }
-        )
+          });
 
-        // manually fire spiderfy
-        // markerclusters.on( 'clusterclick', function (e) { e.layer.spiderfy() })
+        if (!features.length || map.getZoom() !== 13) {
+          return;
+        } else {
+          map
+            .getSource("locations")
+            .getClusterLeaves(clusterId, 100, 0, function (err, leafFeatures) {
+              if (err) {
+                return console.error("problem with leaf features", err);
+              }
+              var markers = _.map(leafFeatures, function (leafFeature) {
+                return leafFeature.properties;
+              });
+              spiderifier.spiderfy(features[0].geometry.coordinates, markers);
+            });
+        }
+      });
 
-        const geojsondata = GeoJSON.parse( dataarray, { Point: ['Latitude','Longitude']} ) //todo: abstract out lat/lon field
+      // When a click event occurs on a feature in
+      // the unclustered-point layer, open a popup at
+      // the location of the feature, with
+      // description HTML from its properties.
+      map.on("click", "unclustered-point", function (e) {
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        let content = "<h4>" + e.features[0].properties.Tribe + "</h4>";
+        content += "<h5>" + e.features[0].properties.Project + "</h5>";
 
-        const featureLayer = L.mapbox.featureLayer().setGeoJSON( geojsondata )
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        }
 
-        // filter data
-        featureLayer.setFilter( feature => filterData( feature, config.uiFilters ))
+        new mapboxgl.Popup().setLngLat(coordinates).setHTML(content).addTo(map);
+      });
+    });
+  }
 
-
-        // add markers and popup content to markercluster group
-        featureLayer.eachLayer( marker => {
-
-            let content = `<h3>${marker.feature.properties.Tribe}</h3>`
-
-            content += `<h4>${marker.feature.properties.Project}</h4>`
-
-            marker.bindPopup( content )
-
-            marker.setIcon( L.mapbox.marker.icon({}) )
-
-            markerclusters.addLayer( marker )
-
-        })
-
-        // add markers to map
-        map.addLayer( markerclusters )
-
-    }
-
-    function countMarkersFromState(state) {
-        let arr = []
-
-        map.eachLayer(function (layer) {
-            if ( layer === markerclusters ) {
-                layer.eachLayer( function( marker ){
-                    if ( marker.feature.properties.State === state ) {
-                        arr.push( marker )
-                    }
-                })
-            }
-        })
-        $('#count-alaska').text( arr.length )
+    function countMarkersFromState(state, dataarray) {
+        let count = 0;
+        dataarray.forEach((point) => {
+            if (point.State === state) count++;
+        });
+        $("#count-alaska").text(count);
         //console.log('found '+ arr.length + ' markers from ' + state)
     }
 
     /**
      * Zoom the map to show all markers if there are any.
      */
-    function zoomMapBounds( markerLayer, cfg ) {
+    function zoomMapBounds(features, cfg) {
 
-        if ( markerLayer.getLayers().length ) {
-            map.fitBounds( markerLayer.getBounds() )
+        var bounds = new mapboxgl.LngLatBounds();
+    
+        features.forEach(function(feature) {
+            bounds.extend(feature.geometry.coordinates);
+        });
+        if (features.length) {
+          map.fitBounds(bounds, {maxZoom: 5, padding: 100});
         } else {
-            map.setView( cfg.mapCenter, cfg.mapZoom )
-            alert('No projects fit the criteria.')
+          map.easeTo({
+            center: cfg.mapCenter,
+            zoom: cfg.mapZoom,
+          });
+          alert("No projects fit the criteria.");
         }
-    }
+      }
 
     /**
      * clearMarkers - remove the marker layer from the map
