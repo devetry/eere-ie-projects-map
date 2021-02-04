@@ -13,7 +13,7 @@ var gulp = require('gulp')
   , browsersync = require('browser-sync').create()
 
 function watchFiles() {
-    gulp.watch("src/**/*", gulp.series(build, browserSyncReload))
+    gulp.watch(["src/**/*"], {queue: false}, gulp.series(build, browserSyncReload))
 }
 
 function browserSync(done) {
@@ -101,22 +101,15 @@ function cleanAppJs() {
         .pipe(clean());
 }
 
-gulp.task('clean-es5', function () {
-    return gulp.src('src/client/js/app.js', {read: false})
-        .pipe(clean())
-})
-
-gulp.task('gh-pages', function() {
+function ghPagesTask() {
     return gulp.src('./dist/**/*')
-        .pipe(ghPages());
-});
-
-gulp.task('deploy', function(cb){
-    runSequence('build', ['gh-pages'], cb)
-});
+        .pipe(ghPages())
+}
 
 const watch = gulp.parallel(watchFiles, browserSync);
 const js = gulp.series(scriptsLint, babeltask, scripts);
-const build = gulp.series(cleanDist, copyfiles, css, js, useminfiles, cleanAppJs);
+const build = gulp.series(cleanDist, copyfiles, css, js, useminfiles);
+const deploy = gulp.series(build, ghPagesTask);
+exports.deploy = deploy;
 exports.watch = watch;
 exports.build = build;
