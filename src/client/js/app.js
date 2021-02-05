@@ -20,8 +20,7 @@
     datatableContainer: 'datatable',
     dataHeaders: ['Project', 'Tribe', 'State', 'Year', 'Assistance Type', 'Category', 'Technology']
   };
-  var map, datatable, data;
-  var spiderifier;
+  var map, datatable, data, spiderifier;
 
   window.onload = function () {
     init(config);
@@ -77,7 +76,7 @@
     $ui.find('[data-target]').each(function (idx, el) {
       var target = $(el).data().target;
       $(el).append(buildHtmlTemplates(target, uiObj));
-    }); // event handler for inputs
+    });
   }
   /**
    * Wrap the project name in a hyperlink
@@ -295,10 +294,9 @@
               return console.error("problem with leaf features", err);
             }
 
-            var markers = _.map(leafFeatures, function (leafFeature) {
+            var markers = leafFeatures.map(function (leafFeature) {
               return leafFeature.properties;
             });
-
             spiderifier.spiderfy(features[0].geometry.coordinates, markers);
           });
         }

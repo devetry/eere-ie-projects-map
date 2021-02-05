@@ -1,7 +1,6 @@
 (() => {
     'use strict'
 
-
     const config = {
         googlekey: '1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y'
       , url: 'https://docs.google.com/spreadsheet/pub'
@@ -15,12 +14,12 @@
       , datatableContainer: 'datatable'
       , dataHeaders: ['Project', 'Tribe', 'State', 'Year','Assistance Type', 'Category', 'Technology']
     }
+    
 
     let map
       , datatable
       , data
-
-    let spiderifier;
+      , spiderifier
 
     window.onload = function() {
         init( config )
@@ -80,9 +79,6 @@
 
             $(el).append( buildHtmlTemplates( target, uiObj ) )
         })
-
-        // event handler for inputs
-        
     }
 
     /**
@@ -92,7 +88,6 @@
      *
      */
     function linkTitle( dataarray ) {
-
         dataarray.forEach( row => {
             row.Project = `<a target="_blank" href="${row.Link}">${row.Project}</a>`
         })
@@ -178,7 +173,6 @@
      *
      */
     function getFilterValues( cfg ) {
-
         Object.keys( cfg.uiFilters ).forEach( filter => {
 
             const $el = $('#ui-controls [data-target="' + filter + '"] :checked')
@@ -190,7 +184,6 @@
                     cfg.uiFilters[filter].push( el.value )
                 }
             })
-
         })
 
     }
@@ -285,7 +278,6 @@ function renderMapMarkers(dataarray) {
         },
       });
 
-
       map.on('zoomstart', function(){
         spiderifier.unspiderfy();
       });
@@ -301,10 +293,10 @@ function renderMapMarkers(dataarray) {
           return;
         }
 
-        var features = map.queryRenderedFeatures(e.point, {
+        const features = map.queryRenderedFeatures(e.point, {
           layers: ["clusters"],
         });
-        var clusterId = features[0].properties.cluster_id;
+        const clusterId = features[0].properties.cluster_id;
         map
           .getSource("locations")
           .getClusterExpansionZoom(clusterId, function (err, zoom) {
@@ -326,7 +318,7 @@ function renderMapMarkers(dataarray) {
               if (err) {
                 return console.error("problem with leaf features", err);
               }
-              var markers = _.map(leafFeatures, function (leafFeature) {
+              var markers = leafFeatures.map( function (leafFeature) {
                 return leafFeature.properties;
               });
               spiderifier.spiderfy(features[0].geometry.coordinates, markers);
