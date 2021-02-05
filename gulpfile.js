@@ -5,12 +5,12 @@ var gulp = require('gulp')
   , rename = require('gulp-rename')
   , clean = require('gulp-clean')
   , usemin = require('gulp-usemin')
-  , cssmin = require('gulp-cssmin')
   , ghPages = require('gulp-gh-pages')
-  , runSequence = require('run-sequence')
   , babel = require('gulp-babel')
   , eslint = require('gulp-eslint')
   , browsersync = require('browser-sync').create()
+  , postcss = require('gulp-postcss')
+  , cssnano = require('cssnano')
 
 function watchFiles() {
     gulp.watch(["src/**/*"], {queue: false}, gulp.series(build, browserSyncReload))
@@ -28,10 +28,9 @@ function browserSync(done) {
 
 // BrowserSync Reload
 function browserSyncReload(done) {
-    
     browsersync.reload();
     done();
-  }
+}
 
 function babeltask() {
     return gulp.src('src/client/js/app.es6.js')
@@ -44,8 +43,7 @@ function babeltask() {
 function useminfiles() {
     return gulp.src('src/index.html')
         .pipe(usemin({
-            //assetsDir: 'images',
-            css: [cssmin(), 'concat'],
+            css: [(postcss([cssnano()])), 'concat'],
             js: [uglify(), 'concat']
         }))
         .pipe(gulp.dest('dist'));
@@ -84,7 +82,7 @@ function scripts() {
 function css() {
     return gulp
         .src('src/client/css/*.css')
-        .pipe(cssmin())
+        .pipe(postcss([cssnano()]))
         .pipe(rename({suffix: '.min.css'}))
         .pipe(gulp.dest('dist/client/css'));
 }
@@ -93,7 +91,6 @@ function css() {
 function cleanDist() {
     return gulp.src(['dist/*'], {read: false})
         .pipe(clean());
-    // return del(["./dist/*"]);
 }
 
 function cleanAppJs() {
