@@ -146,8 +146,8 @@
     spiderifier = new MapboxglSpiderifier(map, {
       customPin: true,
       initializeLeg: function (spiderLeg) {
-        var $spiderPinCustom = $("<div>", { class: "spider-point-circle" });
-        var marker = spiderLeg.feature;
+        let $spiderPinCustom = $("<div>", { class: "spider-point-circle" });
+        let marker = spiderLeg.feature;
 
         $(spiderLeg.elements.pin).append($spiderPinCustom);
         $spiderPinCustom.css({
@@ -160,7 +160,7 @@
         });
         let content = "<h4>" + marker.Tribe + "</h4>";
         content += "<h5>" + marker.Project + "</h5>";
-        var popup = new mapboxgl.Popup({
+        let popup = new mapboxgl.Popup({
           closeOnClick: true,
           offset: MapboxglSpiderifier.popupOffsetForSpiderLeg(spiderLeg),
         }).addTo(map);
@@ -211,7 +211,7 @@
   }
 
   function renderMapMarkers(dataarray) {
-    var $ui = $("#ui-controls");
+    let $ui = $("#ui-controls");
 
     map.on("load", function () {
       let geojsondata = GeoJSON.parse(dataarray, {
@@ -320,7 +320,7 @@
               if (err) {
                 return console.error("problem with leaf features", err);
               }
-              var markers = leafFeatures.map(function (leafFeature) {
+              let markers = leafFeatures.map(function (leafFeature) {
                 return leafFeature.properties;
               });
               spiderifier.spiderfy(features[0].geometry.coordinates, markers);
@@ -333,7 +333,7 @@
       // the location of the feature, with
       // description HTML from its properties.
       map.on("click", "unclustered-point", function (e) {
-        var coordinates = e.features[0].geometry.coordinates.slice();
+        const coordinates = e.features[0].geometry.coordinates.slice();
         let content = "<h4>" + e.features[0].properties.Tribe + "</h4>";
         content += "<h5>" + e.features[0].properties.Project + "</h5>";
 
@@ -359,7 +359,7 @@
    * Zoom the map to show all markers if there are any.
    */
   function zoomMapBounds(features, cfg) {
-    var bounds = new mapboxgl.LngLatBounds();
+    let bounds = new mapboxgl.LngLatBounds();
 
     features.forEach(function (feature) {
       bounds.extend(feature.geometry.coordinates);
@@ -471,9 +471,9 @@
   $(".map-navigation").on("click", "a", function (e) {
     e.preventDefault();
 
-    var pos = $(e.delegateTarget).children().data("position");
+    const pos = $(e.delegateTarget).children().data("position");
     if (pos) {
-      var loc = pos.split(",").reverse();
+      const loc = pos.split(",").reverse();
 
       map.easeTo({
         center: loc,
