@@ -20,7 +20,7 @@
     datatableContainer: 'datatable',
     dataHeaders: ['Project', 'Tribe', 'State', 'Year', 'Assistance Type', 'Category', 'Technology']
   };
-  var map, datatable, data, markerclusters;
+  var map, datatable, data;
   var spiderifier;
 
   window.onload = function () {
@@ -264,8 +264,7 @@
       });
       $ui.on("change", "input, select", function () {
         getFilterValues(config);
-        updateSource(data); // zoomMapBounds(markerclusters, config);
-
+        updateSource(data);
         filterDataTable();
       });
       map.on("click", "clusters", function (e) {
@@ -445,13 +444,16 @@
    */
 
 
-  $('.map-navigation').on('click', 'a', function (e) {
+  $(".map-navigation").on("click", "a", function (e) {
     e.preventDefault();
-    var pos = $(e.delegateTarget).children().data('position');
+    var pos = $(e.delegateTarget).children().data("position");
 
     if (pos) {
-      var loc = pos.split(',');
-      map.setView(loc, 4);
+      var loc = pos.split(",").reverse();
+      map.easeTo({
+        center: loc,
+        zoom: 3
+      });
     }
   });
 })();

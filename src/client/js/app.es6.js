@@ -16,11 +16,9 @@
       , dataHeaders: ['Project', 'Tribe', 'State', 'Year','Assistance Type', 'Category', 'Technology']
     }
 
-
     let map
       , datatable
       , data
-      , markerclusters
 
     let spiderifier;
 
@@ -295,7 +293,6 @@ function renderMapMarkers(dataarray) {
       $ui.on("change", "input, select", function () {      
         getFilterValues(config);
         updateSource(data)
-        // zoomMapBounds(markerclusters, config);
         filterDataTable();
       });
 
@@ -486,19 +483,20 @@ function renderMapMarkers(dataarray) {
         datatable.draw()
     }
 
-    /**
-     * 	Event handler for Alaska UI button
-     */
-    $( '.map-navigation' ).on( 'click', 'a', e => {
-        e.preventDefault()
+  /**
+   * 	Event handler for Alaska UI button
+   */
+  $(".map-navigation").on("click", "a", function (e) {
+    e.preventDefault();
 
-        let pos = $(e.delegateTarget).children().data('position')
+    var pos = $(e.delegateTarget).children().data("position");
+    if (pos) {
+      var loc = pos.split(",").reverse();
 
-        if (pos) {
-            var loc = pos.split(',')
-            map.setView(loc, 4)
-        }
-    })
-
-
-})()
+      map.easeTo({
+        center: loc,
+        zoom: 3,
+      });
+    }
+  });
+})();
