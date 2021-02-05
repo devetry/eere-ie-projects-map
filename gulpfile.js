@@ -12,6 +12,8 @@ var gulp = require('gulp')
   , postcss = require('gulp-postcss')
   , cssnano = require('cssnano')
 
+
+// WATCH TASKS START
 function watchFiles() {
     gulp.watch(["src/**/*"], {queue: false}, gulp.series(build, browserSyncReload))
 }
@@ -32,25 +34,25 @@ function browserSyncReload(done) {
     done();
 }
 
-function babeltask() {
-    return gulp.src('src/client/js/app.es6.js')
-        .pipe(babel({presets: ["@babel/preset-env"]}))
-        .pipe(rename('app.js'))
-        .pipe(gulp.dest('src/client/js'))
-}
+// WATCH TASKS END
 
-function useminfiles() {
-    return gulp.src('src/index.html')
-        .pipe(usemin({
-            css: [(postcss([cssnano()])), 'concat'],
-            js: [uglify(), 'concat']
-        }))
-        .pipe(gulp.dest('dist'));
+// BUILD TASKS START
+
+function cleanDist() {
+    return del(['dist/*']);
 }
 
 function copyfiles() {
     return gulp.src('src/client/images/**')
     .pipe(gulp.dest('dist/client/images'));
+}
+
+function css() {
+    return gulp
+        .src('src/client/css/*.css')
+        .pipe(postcss([cssnano()]))
+        .pipe(rename({suffix: '.min.css'}))
+        .pipe(gulp.dest('dist/client/css'));
 }
 
 function scriptsLint() {
@@ -59,6 +61,13 @@ function scriptsLint() {
         .pipe(eslint())
         .pipe(eslint.format())
         .pipe(eslint.failAfterError())
+}
+
+function babeltask() {
+    return gulp.src('src/client/js/app.es6.js')
+        .pipe(babel({presets: ["@babel/preset-env"]}))
+        .pipe(rename('app.js'))
+        .pipe(gulp.dest('src/client/js'))
 }
 
 function scripts() {
@@ -73,18 +82,16 @@ function scripts() {
     );
 }
 
-function css() {
-    return gulp
-        .src('src/client/css/*.css')
-        .pipe(postcss([cssnano()]))
-        .pipe(rename({suffix: '.min.css'}))
-        .pipe(gulp.dest('dist/client/css'));
+function useminfiles() {
+    return gulp.src('src/index.html')
+        .pipe(usemin({
+            css: [(postcss([cssnano()])), 'concat'],
+            js: [uglify(), 'concat']
+        }))
+        .pipe(gulp.dest('dist'));
 }
 
-
-function cleanDist() {
-    return del(['dist/*']);
-}
+// BUILD TASKS END
 
 function cleanAppJs() {
     return gulp.src('src/client/js/app.js', {read: false})
