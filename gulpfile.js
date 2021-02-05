@@ -3,7 +3,7 @@ var gulp = require('gulp')
   , uglify = require('gulp-uglify')
   , sourcemaps = require('gulp-sourcemaps')
   , rename = require('gulp-rename')
-  , clean = require('gulp-clean')
+  , del = require('del')
   , usemin = require('gulp-usemin')
   , ghPages = require('gulp-gh-pages')
   , babel = require('gulp-babel')
@@ -36,7 +36,6 @@ function babeltask() {
     return gulp.src('src/client/js/app.es6.js')
         .pipe(babel({presets: ["@babel/preset-env"]}))
         .pipe(rename('app.js'))
-        // this below should be src...
         .pipe(gulp.dest('src/client/js'))
 }
 
@@ -61,9 +60,6 @@ function scriptsLint() {
         .pipe(eslint.format())
         .pipe(eslint.failAfterError())
 }
-// scripts lint
-// babeltask -- instaead of pu
-// scripts
 
 function scripts() {
     return (
@@ -74,8 +70,6 @@ function scripts() {
             .pipe(uglify())
             .pipe(sourcemaps.write('./'))
             .pipe(gulp.dest('dist/client/js'))
-            // new src to delete app.js from src folder
-            // .pipe(browsersync.stream())
     );
 }
 
@@ -89,8 +83,7 @@ function css() {
 
 
 function cleanDist() {
-    return gulp.src(['dist/*'], {read: false})
-        .pipe(clean());
+    return del(['dist/*']);
 }
 
 function cleanAppJs() {
