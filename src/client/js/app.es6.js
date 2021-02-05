@@ -1,214 +1,216 @@
 (() => {
-    'use strict'
+  "use strict";
 
-    const config = {
-        googlekey: '1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y'
-      , url: 'https://docs.google.com/spreadsheet/pub'
-      , qstring: '?hl=en_US&hl=en_US&output=html&key='
-      , uiFilters: { 'State': [], 'Technology': [], 'Category': [] }
-      , mapCenter: [-95.84, 37.81]
-      , mapZoom: 3
-      , mapboxToken: 'pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw'
-      , tileLayer: "mapbox://styles/energy/ckhc7eaqv0mjm19p3yr4jtlcw"
-      , mapContainer: 'map'
-      , datatableContainer: 'datatable'
-      , dataHeaders: ['Project', 'Tribe', 'State', 'Year','Assistance Type', 'Category', 'Technology']
-    }
-    
+  const config = {
+    googlekey: "1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y",
+    url: "https://docs.google.com/spreadsheet/pub",
+    qstring: "?hl=en_US&hl=en_US&output=html&key=",
+    uiFilters: { State: [], Technology: [], Category: [] },
+    mapCenter: [-95.84, 37.81],
+    mapZoom: 3,
+    mapboxToken:
+      "pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw",
+    tileLayer: "mapbox://styles/energy/ckhc7eaqv0mjm19p3yr4jtlcw",
+    mapContainer: "map",
+    datatableContainer: "datatable",
+    dataHeaders: [
+      "Project",
+      "Tribe",
+      "State",
+      "Year",
+      "Assistance Type",
+      "Category",
+      "Technology",
+    ],
+  };
 
-    let map
-      , datatable
-      , data
-      , spiderifier
+  let map, datatable, data, spiderifier;
 
-    window.onload = function() {
-        init( config )
-    }
+  window.onload = function () {
+    init(config);
+  };
 
-    function init( cfg ) {
-        Tabletop.init({
-            key: cfg.url + cfg.qstring + cfg.googlekey
-          , callback: render
-          , simpleSheet: true
-        })
-    }
+  function init(cfg) {
+    Tabletop.init({
+      key: cfg.url + cfg.qstring + cfg.googlekey,
+      callback: render,
+      simpleSheet: true,
+    });
+  }
 
+  function render(googledata /*, tabletop */) {
+    data = googledata; // make the data global
 
-    function render( googledata /*, tabletop */ ) {
-        data = googledata // make the data global
+    linkTitle(data); // mashup the project name and hyperlink
+    buildUI(data);
+    renderMap(config);
+    getFilterValues(config);
+    renderMapMarkers(data);
+    countMarkersFromState("Alaska", data);
+    renderDataTable(data);
+  }
 
-        linkTitle( data ) // mashup the project name and hyperlink
-        buildUI( data )
-        renderMap( config )
-        getFilterValues( config )
-        renderMapMarkers( data )
-        countMarkersFromState('Alaska', data)
-        renderDataTable( data )
-    }
+  function buildHtmlTemplates(src, uiobj) {
+    let tmplSrc = $("script")
+      .filter('[data-template="' + src + '"]')
+      .html();
 
+    let template = Handlebars.compile(tmplSrc);
 
-    function buildHtmlTemplates( src, uiobj ) {
-        let tmplSrc = $('script').filter( '[data-template="' + src + '"]' ).html()
+    return template(uiobj);
+  }
 
-        let template = Handlebars.compile( tmplSrc )
+  /**
+   *
+   * buildUI - build the inputs/selects/checkboxes used to control the map and table
+   * @param  {array} data rows from the datasource
+   *
+   */
+  function buildUI(dataarray) {
+    const $ui = $("#ui-controls");
+    let uiObj = {};
 
-        return  template(  uiobj  )
-    }
+    // todo: refactor - this is not efficient... relooping thru data
+    Object.keys(config.uiFilters).forEach((title) => {
+      uiObj[title] = dataarray
+        .map((result) => result[title])
+        .sort()
+        .filter((a, b, c) => c.indexOf(a) === b); // grab unique items
+    });
 
-    /**
-     *
-     * buildUI - build the inputs/selects/checkboxes used to control the map and table
-     * @param  {array} data rows from the datasource
-     *
-     */
-    function buildUI( dataarray ) {
-        const $ui = $('#ui-controls')
-        let uiObj = {}
+    $ui.find("[data-target]").each((idx, el) => {
+      let target = $(el).data().target;
 
-        // todo: refactor - this is not efficient... relooping thru data
-        Object.keys(config.uiFilters).forEach( title => {
+      $(el).append(buildHtmlTemplates(target, uiObj));
+    });
+  }
 
-            uiObj[ title ] = dataarray
-                .map( result => result[ title ] )
-                .sort()
-                .filter( ( a, b, c ) => c.indexOf(a) === b ) // grab unique items
-        })
+  /**
+   * Wrap the project name in a hyperlink
+   *
+   * @param  {array} data - rows from datasource
+   *
+   */
+  function linkTitle(dataarray) {
+    dataarray.forEach((row) => {
+      row.Project = `<a target="_blank" href="${row.Link}">${row.Project}</a>`;
+    });
+  }
 
-        $ui.find('[data-target]').each( (idx, el) => {
-            let target = $(el).data().target
+  /**
+   * todo: if one of our headers isn't in the data, prune it so DT doesn't throw an error
+   * [renderDataTable description]
+   * @param  {[type]} data [description]
+   */
+  function renderDataTable(dataarray) {
+    // set up columns properly
+    const columns = config.dataHeaders.map((header) => {
+      return {
+        title: header,
+        data: header,
+      };
+    });
 
-            $(el).append( buildHtmlTemplates( target, uiObj ) )
-        })
-    }
+    // swap footer UI element placement
+    const dom =
+      '<"row"<"col-sm-6"l><"col-sm-6"f>>' +
+      '<"row"<"col-sm-12"tr>>' +
+      '<"row"<"col-sm-5"p><"col-sm-7"i>>';
 
-    /**
-     * Wrap the project name in a hyperlink
-     *
-     * @param  {array} data - rows from datasource
-     *
-     */
-    function linkTitle( dataarray ) {
-        dataarray.forEach( row => {
-            row.Project = `<a target="_blank" href="${row.Link}">${row.Project}</a>`
-        })
-    }
+    // init the datatable
+    datatable = $("#" + config.datatableContainer).DataTable({
+      data: dataarray,
+      columns: columns,
+      dom: dom,
+      language: { search: "Search table:" },
+    });
+  }
 
-    /**
-     * todo: if one of our headers isn't in the data, prune it so DT doesn't throw an error
-     * [renderDataTable description]
-     * @param  {[type]} data [description]
-     */
-    function renderDataTable( dataarray ) {
+  /**
+   *
+   * renderMap - set the zoom, coords, tiles, and create a mapbox map
+   * @return {[type]} [description]
+   *
+   */
+  function renderMap(cfg) {
+    mapboxgl.accessToken =
+      "pk.eyJ1IjoibnJlbC1jb21hcHMiLCJhIjoiY2pveGNkcmFrMjdjeDNwcGR4cTF3c3ZhZiJ9.zrGPMAY7OCtiwuSXTWv0fQ";
+    map = new mapboxgl.Map({
+      container: "map",
+      style: "mapbox://styles/mapbox/light-v10",
+      center: cfg.mapCenter,
+      zoom: cfg.mapZoom,
+      maxZoom: 13,
+    });
 
-        // set up columns properly
-        const columns = config.dataHeaders.map( header => {
-              return {
-                  title: header
-                , data: header
-              }
-        })
+    spiderifier = new MapboxglSpiderifier(map, {
+      customPin: true,
+      initializeLeg: function (spiderLeg) {
+        var $spiderPinCustom = $("<div>", { class: "spider-point-circle" });
+        var marker = spiderLeg.feature;
 
-        // swap footer UI element placement
-        const dom = '<"row"<"col-sm-6"l><"col-sm-6"f>>' +
-                  '<"row"<"col-sm-12"tr>>' +
-                  '<"row"<"col-sm-5"p><"col-sm-7"i>>'
-
-        // init the datatable
-        datatable = $( '#' + config.datatableContainer ).DataTable({
-            data: dataarray
-          , columns: columns
-          , dom: dom
-          , language: { search: 'Search table:' }
-        })
-
-    }
-
-    /**
-     *
-     * renderMap - set the zoom, coords, tiles, and create a mapbox map
-     * @return {[type]} [description]
-     *
-     */
-    function renderMap(cfg) {
-        mapboxgl.accessToken =
-          "pk.eyJ1IjoibnJlbC1jb21hcHMiLCJhIjoiY2pveGNkcmFrMjdjeDNwcGR4cTF3c3ZhZiJ9.zrGPMAY7OCtiwuSXTWv0fQ";
-        map = new mapboxgl.Map({
-          container: "map",
-          style: "mapbox://styles/mapbox/light-v10",
-          center: cfg.mapCenter,
-          zoom: cfg.mapZoom,
-          maxZoom: 13,
+        $(spiderLeg.elements.pin).append($spiderPinCustom);
+        $spiderPinCustom.css({
+          width: "30px",
+          height: "30px",
+          "margin-left": "-15px",
+          "margin-top": "-15px",
+          "background-color": "rgba(110, 204, 57, 1)",
+          "border-radius": "50%",
         });
-    
-        spiderifier = new MapboxglSpiderifier(map, {
-          customPin: true,
-          initializeLeg: function (spiderLeg) {
-            var $spiderPinCustom = $("<div>", { class: "spider-point-circle" });
-            var marker = spiderLeg.feature;
-    
-            $(spiderLeg.elements.pin).append($spiderPinCustom);
-            $spiderPinCustom.css({
-              width: "30px",
-              height: "30px",
-              "margin-left": "-15px",
-              "margin-top": "-15px",
-              "background-color": "rgba(110, 204, 57, 1)",
-              "border-radius": "50%",
-            });
-            let content = "<h4>" + marker.Tribe + "</h4>";
-            content += "<h5>" + marker.Project + "</h5>";
-            var popup = new mapboxgl.Popup({
-              closeOnClick: true,
-              offset: MapboxglSpiderifier.popupOffsetForSpiderLeg(spiderLeg),
-            }).addTo(map);
-            popup.setHTML(content);
-            spiderLeg.mapboxMarker.setPopup(popup);
-          },
-        });
-      }
+        let content = "<h4>" + marker.Tribe + "</h4>";
+        content += "<h5>" + marker.Project + "</h5>";
+        var popup = new mapboxgl.Popup({
+          closeOnClick: true,
+          offset: MapboxglSpiderifier.popupOffsetForSpiderLeg(spiderLeg),
+        }).addTo(map);
+        popup.setHTML(content);
+        spiderLeg.mapboxMarker.setPopup(popup);
+      },
+    });
+  }
 
-    /**
-     *
-     * getFilterValues - check the state of our UI elements
-     *
-     */
-    function getFilterValues( cfg ) {
-        Object.keys( cfg.uiFilters ).forEach( filter => {
+  /**
+   *
+   * getFilterValues - check the state of our UI elements
+   *
+   */
+  function getFilterValues(cfg) {
+    Object.keys(cfg.uiFilters).forEach((filter) => {
+      const $el = $('#ui-controls [data-target="' + filter + '"] :checked');
 
-            const $el = $('#ui-controls [data-target="' + filter + '"] :checked')
+      cfg.uiFilters[filter].length = 0; // clear out existing array
 
-            cfg.uiFilters[filter].length = 0 // clear out existing array
+      $el.each((idx, el) => {
+        if (el.value.length) {
+          cfg.uiFilters[filter].push(el.value);
+        }
+      });
+    });
+  }
 
-            $el.each( (idx, el) => {
-                if ( el.value.length ) {
-                    cfg.uiFilters[filter].push( el.value )
-                }
-            })
-        })
+  /**
+   *
+   * renderMapMarkers -
+   * @param  {array} data -
+   *
+   */
 
-    }
+  function updateSource(dataarray) {
+    let geojsondata = GeoJSON.parse(dataarray, {
+      Point: ["Latitude", "Longitude"],
+    }); //todo: abstract out lat/lon field
 
-    /**
-     *
-     * renderMapMarkers -
-     * @param  {array} data -
-     *
-     */
+    geojsondata.features = geojsondata.features.filter((feat) =>
+      filterData(feat, config.uiFilters)
+    );
+    console.log(geojsondata.features);
 
-    function updateSource(dataarray) {
-        let geojsondata = GeoJSON.parse(dataarray, {
-          Point: ["Latitude", "Longitude"],
-        }); //todo: abstract out lat/lon field
-    
-        geojsondata.features = geojsondata.features.filter(feat => filterData(feat, config.uiFilters));
-        console.log(geojsondata.features)
-    
-        map.getSource('locations').setData(geojsondata)
-        zoomMapBounds(geojsondata.features, config);
-      }
+    map.getSource("locations").setData(geojsondata);
+    zoomMapBounds(geojsondata.features, config);
+  }
 
-function renderMapMarkers(dataarray) {
-    
+  function renderMapMarkers(dataarray) {
     var $ui = $("#ui-controls");
 
     map.on("load", function () {
@@ -278,13 +280,13 @@ function renderMapMarkers(dataarray) {
         },
       });
 
-      map.on('zoomstart', function(){
+      map.on("zoomstart", function () {
         spiderifier.unspiderfy();
       });
 
-      $ui.on("change", "input, select", function () {      
+      $ui.on("change", "input, select", function () {
         getFilterValues(config);
-        updateSource(data)
+        updateSource(data);
         filterDataTable();
       });
 
@@ -318,7 +320,7 @@ function renderMapMarkers(dataarray) {
               if (err) {
                 return console.error("problem with leaf features", err);
               }
-              var markers = leafFeatures.map( function (leafFeature) {
+              var markers = leafFeatures.map(function (leafFeature) {
                 return leafFeature.properties;
               });
               spiderifier.spiderfy(features[0].geometry.coordinates, markers);
@@ -344,136 +346,124 @@ function renderMapMarkers(dataarray) {
     });
   }
 
-    function countMarkersFromState(state, dataarray) {
-        let count = 0;
-        dataarray.forEach((point) => {
-            if (point.State === state) count++;
-        });
-        $("#count-alaska").text(count);
-        //console.log('found '+ arr.length + ' markers from ' + state)
+  function countMarkersFromState(state, dataarray) {
+    let count = 0;
+    dataarray.forEach((point) => {
+      if (point.State === state) count++;
+    });
+    $("#count-alaska").text(count);
+    //console.log('found '+ arr.length + ' markers from ' + state)
+  }
+
+  /**
+   * Zoom the map to show all markers if there are any.
+   */
+  function zoomMapBounds(features, cfg) {
+    var bounds = new mapboxgl.LngLatBounds();
+
+    features.forEach(function (feature) {
+      bounds.extend(feature.geometry.coordinates);
+    });
+    if (features.length) {
+      map.fitBounds(bounds, { maxZoom: 5, padding: 100 });
+    } else {
+      map.easeTo({
+        center: cfg.mapCenter,
+        zoom: cfg.mapZoom,
+      });
+      alert("No projects fit the criteria.");
     }
+  }
 
-    /**
-     * Zoom the map to show all markers if there are any.
-     */
-    function zoomMapBounds(features, cfg) {
+  /**
+   * clearMarkers - remove the marker layer from the map
+   * @param  {object} markerLayer
+   */
+  function clearMarkers(markerLayer) {
+    if (markerLayer !== undefined) {
+      map.removeLayer(markerLayer);
+    } else {
+      console.log("Marker layer was undefined. Nothing to remove.");
+    }
+  }
 
-        var bounds = new mapboxgl.LngLatBounds();
-    
-        features.forEach(function(feature) {
-            bounds.extend(feature.geometry.coordinates);
-        });
-        if (features.length) {
-          map.fitBounds(bounds, {maxZoom: 5, padding: 100});
-        } else {
-          map.easeTo({
-            center: cfg.mapCenter,
-            zoom: cfg.mapZoom,
-          });
-          alert("No projects fit the criteria.");
-        }
+  /**
+   * filterData - find a value within an object's keys
+   * @param  {object} feature
+   * @param  {object} filters
+   * @return {boolean} true if the feature matches
+   */
+  function filterData(feature, filters) {
+    let bln = true;
+
+    Object.keys(filters).forEach((filter) => {
+      let props;
+
+      if (feature.properties[filter]) {
+        props = feature.properties[filter].split(","); // convert comma separated string to array
+
+        bln = bln && matches(props, filters[filter]);
       }
+    });
 
-    /**
-     * clearMarkers - remove the marker layer from the map
-     * @param  {object} markerLayer
-     */
-    function clearMarkers( markerLayer ) {
-        if ( markerLayer !== undefined ) {
-            map.removeLayer( markerLayer )
-        } else {
-            console.log('Marker layer was undefined. Nothing to remove.')
-        }
-    }
+    return bln;
+  }
 
+  /**
+   * matches - check if any of the criteria match our properties
+   *
+   * @param  {array} needles list of properties of an object
+   * @param  {array} haystack array containing a list of criteria we're looking for
+   *
+   * @return {boolean} true if any of needles are in haystack
+   */
+  function matches(needles, haystack) {
+    let ismatch;
 
+    ismatch = haystack.length
+      ? haystack.some((option) => needles.indexOf(option) >= 0)
+      : true;
+    // if ( haystack.length ) {
+    //   ismatch   = haystack.some( option => needles.indexOf( option ) >= 0 )
+    // }
 
+    return ismatch;
+  }
 
-    /**
-     * filterData - find a value within an object's keys
-     * @param  {object} feature
-     * @param  {object} filters
-     * @return {boolean} true if the feature matches
-     */
-    function filterData( feature, filters ) {
+  /**
+   * escapeRegExp - make a string safe for use as a regular expression
+   * @param  {string} str input string
+   * @return {string}    string with special regex characters escaped
+   */
+  function escapeRegExp(str) {
+    return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+  }
 
-        let bln = true
+  /**
+   * filterDataTable - use datatables search/filter function to filter the table
+   * @param  {[type]} terms [description]
+   *
+   */
+  function filterDataTable() {
+    Object.keys(config.uiFilters).forEach((filter) => {
+      let idx = config.dataHeaders.indexOf(filter);
 
-        Object.keys( filters ).forEach( filter => {
-            let props
+      // build out regex terms that match the word/phrase exactly
+      // eg don't let "other" match "geothermal"
+      // and escape out control characters
+      let terms = config.uiFilters[filter].map((val) => {
+        val = escapeRegExp(val);
+        return `^${val}$`;
+      });
 
-            if ( feature.properties[ filter ] ) {
-                props = feature.properties[ filter ].split(',') // convert comma separated string to array
+      // convert array to pipe-separated string for regex search
+      let regexterms = terms.join("|");
 
-                bln = bln && matches( props, filters[ filter ] )
-            }
+      datatable.column(idx).search(regexterms, true, false);
+    });
 
-        })
-
-        return bln
-    }
-
-
-    /**
-     * matches - check if any of the criteria match our properties
-     *
-     * @param  {array} needles list of properties of an object
-     * @param  {array} haystack array containing a list of criteria we're looking for
-     *
-     * @return {boolean} true if any of needles are in haystack
-     */
-    function matches( needles, haystack ){
-
-        let ismatch
-
-        ismatch = haystack.length ? haystack.some( option => needles.indexOf( option ) >= 0 ) : true
-        // if ( haystack.length ) {
-        //   ismatch   = haystack.some( option => needles.indexOf( option ) >= 0 )
-        // }
-
-        return ismatch
-    }
-
-
-    /**
-     * escapeRegExp - make a string safe for use as a regular expression
-     * @param  {string} str input string
-     * @return {string}    string with special regex characters escaped
-     */
-    function escapeRegExp(str) {
-        return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-    }
-
-
-    /**
-     * filterDataTable - use datatables search/filter function to filter the table
-     * @param  {[type]} terms [description]
-     *
-     */
-    function filterDataTable() {
-
-
-        Object.keys( config.uiFilters ).forEach( filter => {
-
-            let idx = config.dataHeaders.indexOf( filter )
-
-            // build out regex terms that match the word/phrase exactly
-            // eg don't let "other" match "geothermal"
-            // and escape out control characters
-            let terms = config.uiFilters[ filter ].map( val => {
-                val = escapeRegExp(val)
-                return `^${val}$`
-            })
-
-            // convert array to pipe-separated string for regex search
-            let regexterms = terms.join('|')
-
-            datatable.column( idx ).search( regexterms, true, false )
-
-        })
-
-        datatable.draw()
-    }
+    datatable.draw();
+  }
 
   /**
    * 	Event handler for Alaska UI button

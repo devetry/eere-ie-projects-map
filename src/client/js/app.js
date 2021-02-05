@@ -1,24 +1,24 @@
 "use strict";
 
 (function () {
-  'use strict';
+  "use strict";
 
   var config = {
-    googlekey: '1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y',
-    url: 'https://docs.google.com/spreadsheet/pub',
-    qstring: '?hl=en_US&hl=en_US&output=html&key=',
+    googlekey: "1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y",
+    url: "https://docs.google.com/spreadsheet/pub",
+    qstring: "?hl=en_US&hl=en_US&output=html&key=",
     uiFilters: {
-      'State': [],
-      'Technology': [],
-      'Category': []
+      State: [],
+      Technology: [],
+      Category: []
     },
     mapCenter: [-95.84, 37.81],
     mapZoom: 3,
-    mapboxToken: 'pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw',
+    mapboxToken: "pk.eyJ1IjoibnJlbCIsImEiOiJNOTcxYUhZIn0.Jc7TB_G2VQYs9e0S2laKcw",
     tileLayer: "mapbox://styles/energy/ckhc7eaqv0mjm19p3yr4jtlcw",
-    mapContainer: 'map',
-    datatableContainer: 'datatable',
-    dataHeaders: ['Project', 'Tribe', 'State', 'Year', 'Assistance Type', 'Category', 'Technology']
+    mapContainer: "map",
+    datatableContainer: "datatable",
+    dataHeaders: ["Project", "Tribe", "State", "Year", "Assistance Type", "Category", "Technology"]
   };
   var map, datatable, data, spiderifier;
 
@@ -45,12 +45,12 @@
     renderMap(config);
     getFilterValues(config);
     renderMapMarkers(data);
-    countMarkersFromState('Alaska', data);
+    countMarkersFromState("Alaska", data);
     renderDataTable(data);
   }
 
   function buildHtmlTemplates(src, uiobj) {
-    var tmplSrc = $('script').filter('[data-template="' + src + '"]').html();
+    var tmplSrc = $("script").filter('[data-template="' + src + '"]').html();
     var template = Handlebars.compile(tmplSrc);
     return template(uiobj);
   }
@@ -63,7 +63,7 @@
 
 
   function buildUI(dataarray) {
-    var $ui = $('#ui-controls');
+    var $ui = $("#ui-controls");
     var uiObj = {}; // todo: refactor - this is not efficient... relooping thru data
 
     Object.keys(config.uiFilters).forEach(function (title) {
@@ -73,7 +73,7 @@
         return c.indexOf(a) === b;
       }); // grab unique items
     });
-    $ui.find('[data-target]').each(function (idx, el) {
+    $ui.find("[data-target]").each(function (idx, el) {
       var target = $(el).data().target;
       $(el).append(buildHtmlTemplates(target, uiObj));
     });
@@ -109,12 +109,12 @@
 
     var dom = '<"row"<"col-sm-6"l><"col-sm-6"f>>' + '<"row"<"col-sm-12"tr>>' + '<"row"<"col-sm-5"p><"col-sm-7"i>>'; // init the datatable
 
-    datatable = $('#' + config.datatableContainer).DataTable({
+    datatable = $("#" + config.datatableContainer).DataTable({
       data: dataarray,
       columns: columns,
       dom: dom,
       language: {
-        search: 'Search table:'
+        search: "Search table:"
       }
     });
   }
@@ -198,7 +198,7 @@
       return filterData(feat, config.uiFilters);
     });
     console.log(geojsondata.features);
-    map.getSource('locations').setData(geojsondata);
+    map.getSource("locations").setData(geojsondata);
     zoomMapBounds(geojsondata.features, config);
   }
 
@@ -258,7 +258,7 @@
           "text-size": 12
         }
       });
-      map.on('zoomstart', function () {
+      map.on("zoomstart", function () {
         spiderifier.unspiderfy();
       });
       $ui.on("change", "input, select", function () {
@@ -360,7 +360,7 @@
     if (markerLayer !== undefined) {
       map.removeLayer(markerLayer);
     } else {
-      console.log('Marker layer was undefined. Nothing to remove.');
+      console.log("Marker layer was undefined. Nothing to remove.");
     }
   }
   /**
@@ -377,7 +377,7 @@
       var props;
 
       if (feature.properties[filter]) {
-        props = feature.properties[filter].split(','); // convert comma separated string to array
+        props = feature.properties[filter].split(","); // convert comma separated string to array
 
         bln = bln && matches(props, filters[filter]);
       }
@@ -432,7 +432,7 @@
         return "^".concat(val, "$");
       }); // convert array to pipe-separated string for regex search
 
-      var regexterms = terms.join('|');
+      var regexterms = terms.join("|");
       datatable.column(idx).search(regexterms, true, false);
     });
     datatable.draw();
