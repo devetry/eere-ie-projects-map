@@ -15,7 +15,7 @@ var gulp = require('gulp')
 
 // WATCH TASKS START
 function watchFiles() {
-    gulp.watch(["src/**/*"], {queue: false}, gulp.series(build, browserSyncReload))
+    gulp.watch(["src/**/*.es6.js", "src/**/*.css", "src/**/spider.js", "src/*.html"], {queue: false}, gulp.series(build, browserSyncReload))
 }
 
 function browserSync(done) {
@@ -94,8 +94,7 @@ function useminfiles() {
 // BUILD TASKS END
 
 function cleanAppJs() {
-    return gulp.src('src/client/js/app.js', {read: false})
-        .pipe(clean());
+    return del(['src/client/js/app.js']);
 }
 
 function ghPagesTask() {
@@ -105,7 +104,7 @@ function ghPagesTask() {
 
 const watch = gulp.parallel(watchFiles, browserSync);
 const js = gulp.series(scriptsLint, babeltask, scripts);
-const build = gulp.series(cleanDist, copyfiles, css, js, useminfiles);
+const build = gulp.series(cleanDist, copyfiles, css, js, useminfiles, cleanAppJs);
 const deploy = gulp.series(build, ghPagesTask);
 exports.deploy = deploy;
 exports.watch = watch;
