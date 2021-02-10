@@ -3,7 +3,7 @@ import MapboxglSpiderifier from './spider.es6.js';
 import GeoJSON from './geojson.min.js';
 (() => {
   "use strict";
-
+  
   const config = {
     googlekey: "1PeYaVWqSWABu6kWKI3VF48_iL-YLAyFJIo9j8Hnx73Y",
     url: "https://docs.google.com/spreadsheet/pub",
