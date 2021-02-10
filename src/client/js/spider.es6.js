@@ -1,21 +1,23 @@
-(function(root, factory) {
-    if (typeof exports === 'object' && typeof module !== 'undefined') {
-      module.exports = factory(require('mapbox-gl'));
-    } else if (typeof define === 'function' && define.amd) {
-      define(['MapboxglSpiderifier'], factory);
-    } else  {
-      root.MapboxglSpiderifier = factory(root.mapboxgl);
-    }
-  }(this, function(mapboxgl) {
-    function MapboxglSpiderifier(map, userOptions) {
+// (function(root, factory) {
+//     "use strict";
+    
+//     if (typeof exports === 'object' && typeof module !== 'undefined') {
+//       module.exports = factory(require('mapbox-gl'));
+//     } else if (typeof define === 'function' && define.amd) {
+//       define(['MapboxglSpiderifier'], factory);
+//     } else  {
+//       root.MapboxglSpiderifier = factory(root.mapboxgl);
+//     }
+//   }(this, function(mapboxgl) {
+export  default  function MapboxglSpiderifier(map, userOptions) {
       var util = {
           each: eachFn,
           map: mapFn,
           mapTimes: mapTimesFn,
           eachTimes: eachTimesFn
-        },
-        NULL_FUNCTION = function () {},
-        options = {
+        }
+        var NULL_FUNCTION = function () {}
+        var options = {
           animate: true, // to animate the spiral
           animationSpeed: 30, // animation speed in milliseconds
           customPin: false, // If false, sets a default icon for pins in spider legs.
@@ -30,9 +32,9 @@
           spiralLengthStart: 40, // ditto
           spiralLengthFactor: 8, // ditto
           // ---
-        },
-        twoPi = Math.PI * 2,
-        previousSpiderLegs = [];
+        }
+        var twoPi = Math.PI * 2
+        var previousSpiderLegs = [];
   
       for (var attrname in userOptions) {
         options[attrname] = userOptions[attrname];
@@ -233,5 +235,5 @@
       return [offset[0]+ (variantX || 0), offset[1]+ (variantY || 0)];
     }
   
-    return MapboxglSpiderifier;
-  }));
+  //   return MapboxglSpiderifier;
+  // }));
