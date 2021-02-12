@@ -158,7 +158,7 @@ import GeoJSON from './geojson.min.js';
           height: "30px",
           "margin-left": "-15px",
           "margin-top": "-15px",
-          "background-color": "rgba(110, 204, 57, 1)",
+          "background-color": "rgba(8, 183, 241, 1)",
           "border-radius": "50%",
         });
         let content = "<h4>" + marker.Tribe + "</h4>";
@@ -238,11 +238,11 @@ import GeoJSON from './geojson.min.js';
           "circle-color": [
             "step",
             ["get", "point_count"],
-            "rgba(110, 204, 57, 0.6)",
+            "rgba(8, 183, 241, 1)",
             10,
-            "rgba(240, 194, 12, 0.6)",
+            "rgba(255, 201, 86, 1)",
             50,
-            "rgba(241, 128, 23, 0.6)",
+            "rgba(232, 131, 32, 1)",
           ],
           "circle-radius": 20,
         },
@@ -266,7 +266,7 @@ import GeoJSON from './geojson.min.js';
         source: "locations",
         filter: ["!", ["has", "point_count"]],
         paint: {
-          "circle-color": "rgba(110, 204, 57, 0.6)",
+          "circle-color": "rgba(8, 183, 241, 1)",
           "circle-radius": 20,
         },
       });

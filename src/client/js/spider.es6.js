@@ -15,8 +15,8 @@ export default function MapboxglSpiderifier(map, userOptions) {
     // --- <SPIDER TUNING Params>
     // circleSpiralSwitchover: show spiral instead of circle from this marker count upwards
     //                        0 -> always spiral; Infinity -> always circle
-    circleSpiralSwitchover: 0,
-    circleFootSeparation: 35, // related to circumference of circle
+    circleSpiralSwitchover: 9,
+    circleFootSeparation: 65, // related to circumference of circle
     spiralFootSeparation: 50, // related to size of spiral (experiment!)
     spiralLengthStart: 40, // ditto
     spiralLengthFactor: 8, // ditto
