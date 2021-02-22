@@ -1,96 +1,105 @@
 var gulp = require('gulp')
-  , concat = require('gulp-concat')
-  , uglify = require('gulp-uglify')
   , sourcemaps = require('gulp-sourcemaps')
-  , rename = require('gulp-rename')
-  , clean = require('gulp-clean')
-  , usemin = require('gulp-usemin')
-  , cssmin = require('gulp-cssmin')
-  , livereload = require('gulp-livereload')
+  , del = require('del')
   , ghPages = require('gulp-gh-pages')
-  , runSequence = require('run-sequence')
-  , babel = require('gulp-babel')
   , eslint = require('gulp-eslint')
+  , browsersync = require('browser-sync').create()
+  , postcss = require('gulp-postcss')
+  , cssnano = require('cssnano')
+  , browserify = require("browserify")
+  , babelify = require("babelify")
+  , source = require("vinyl-source-stream")
+  , buffer = require("vinyl-buffer")
+  , terser = require("gulp-terser")
+  , htmlmin = require("gulp-htmlmin")
 
-// Watch Our Files
-gulp.task('watch', function() {
-    livereload.listen();
-    gulp.watch('src/**/*', ['build']).on('change', livereload.changed)
-    //gulp.watch('dist/**/*').on('change', livereload.changed)
-});
 
+// WATCH TASKS START
+function watchFiles() {
+    gulp.watch(["src/**/*.es6.js", "src/**/*.css", "src/*.html"], {queue: false}, gulp.series(build, browserSyncReload))
+}
 
-gulp.task('babel', function() {
-    return gulp.src('src/client/js/app.es6.js')
-        .pipe(babel({presets: ['es2015']}))
-        .pipe(rename('app.js'))
-        .pipe(gulp.dest('src/client/js'))
-})
+function browserSync(done) {
+    browsersync.init({
+        server: {
+            baseDir: "./dist/"
+        },
+        port: 3000
+    });
+    done();
+}
 
-gulp.task('usemin', function() {
-    return gulp.src('src/index.html')
-        .pipe(usemin({
-            //assetsDir: 'images',
-            css: [cssmin(), 'concat'],
-            js: [uglify(), 'concat']
-        }))
-        .pipe(gulp.dest('dist'));
-});
+// BrowserSync Reload
+function browserSyncReload(done) {
+    browsersync.reload();
+    done();
+}
 
-// copy images to dist/
-gulp.task('copyfiles', function() {
-    gulp.src('src/client/images/**')
+// WATCH TASKS END
+
+// BUILD TASKS START
+
+function cleanDist() {
+    return del(['dist/*']);
+}
+
+function copyfiles() {
+    return gulp.src('src/client/images/**')
     .pipe(gulp.dest('dist/client/images'));
-});
+}
 
-gulp.task('lint', function () {
-    return gulp.src(['src/client/*.es6.js','!node_modules/**'])
+function css() {
+    return gulp
+        .src('src/client/css/*.css')
+        .pipe(postcss([cssnano()]))
+        .pipe(gulp.dest('dist/client/css'));
+}
+
+function scriptsLint() {
+    return gulp
+        .src(['src/client/*.es6.js','!node_modules/**'])
         .pipe(eslint())
         .pipe(eslint.format())
         .pipe(eslint.failAfterError())
-})
+}
+	
+function javascriptBuild() {
+    var b = browserify({
+        entries: 'src/client/js/app.es6.js',
+        debug: true,
+        transform: [babelify.configure({
+            presets: ["@babel/preset-env"]
+        })]
+      });
+    
+    return b.bundle()
+      .pipe(source('bundle.js'))
+      .pipe(buffer())
+      .pipe(sourcemaps.init({loadMaps: true}))
+        .pipe(terser())
+      .pipe(sourcemaps.write('./'))
+      .pipe(gulp.dest('dist/client/js'))
+}
 
-// Concat & Minify JS
-gulp.task('uglify', function(){
-  return gulp.src('src/client/js/app.js')
-        .pipe(sourcemaps.init())
-        .pipe(concat('app.min.js'))
-        //.pipe(rename('app.min.js'))
-        .pipe(uglify())
-        //.pipe(uglify( {compress: {drop_debugger:false} }))
-        .pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest('dist/client/js'))
-})
+	
+function htmlBuild() {
+    return gulp
+        .src(`src/index.html`)
+        .pipe(htmlmin())
+        .pipe(gulp.dest('dist'));
+}
 
+// BUILD TASKS END
 
-gulp.task('cssmin', function () {
-    return gulp.src('src/client/css/*.css')
-        .pipe(cssmin())
-        .pipe(rename({suffix: '.min.css'}))
-        .pipe(gulp.dest('dist/client/css'));
-});
-
-
-// remove anything in dist
-gulp.task('clean', function() {
-    return gulp.src(['dist/*'], {read: false})
-        .pipe(clean());
-});
-
-gulp.task('clean-es5', function () {
-    return gulp.src('src/client/js/app.js', {read: false})
-        .pipe(clean())
-})
-
-gulp.task('gh-pages', function() {
+function ghPagesTask() {
     return gulp.src('./dist/**/*')
-        .pipe(ghPages());
-});
+        .pipe(ghPages())
+}
 
-gulp.task('deploy', function(cb){
-    runSequence('build', ['gh-pages'], cb)
-});
-
-gulp.task('build', function(cb){
-    runSequence('clean', 'copyfiles', 'lint','babel', 'usemin' /*, 'clean-es5'*/, cb)
-});
+const watch = gulp.parallel(watchFiles, browserSync);
+const js = gulp.series(scriptsLint, javascriptBuild);
+const build = gulp.series(cleanDist, copyfiles, css, js, htmlBuild);
+const deploy = gulp.series(build, ghPagesTask);
+exports.deploy = deploy;
+exports.watch = watch;
+exports.build = build;
