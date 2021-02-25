@@ -13,7 +13,7 @@ This project uses gulp.js for task automation.
 
 ## Development
 
-Work in the ```src/``` folder. The ```gulp watch``` task monitors changes in the src folder, runs the build task, and serves from the ```dist/``` folder.
+Work in the ```src/``` folder. The ```npx gulp watch``` task monitors changes in the src folder, runs the build task, and serves from the ```dist/``` folder.
 
 
 ## Install
@@ -22,16 +22,16 @@ Work in the ```src/``` folder. The ```gulp watch``` task monitors changes in the
 $ git clone https://github.com/NREL/eere-ie-projects-map.git
 $ npm install
 ```
-If you have issues installing npm, see https://github.nrel.gov/TADA/nrel-certs.
+If you have issues running npm, see https://github.nrel.gov/TADA/nrel-certs.
 
 
 ## Build
 To build the distribution, run the build task.
 
 ```bash
-$ gulp build
+$ npx gulp build
 ```
-(You can run the ```gulp watch``` task to continually build.)
+(You can run the ```npx gulp watch``` task to continually build.)
 
 ## Deploy
 To deploy to http://nrel.github.io/eere-ie-projects-map/ run the deploy task. Using ```npx``` as specified below means you will not have to install gulp globally.
