@@ -13,7 +13,7 @@ This project uses gulp.js for task automation.
 
 ## Development
 
-Work in the ```src/``` folder. You can manually transpile your ES6 syntax back to ES5 using ```gulp babel```. The ```gulp watch``` task monitors changes in the src folder and runs the build task.
+Work in the ```src/``` folder. The ```gulp watch``` task monitors changes in the src folder, runs the build task, and serves from the ```dist/``` folder.
 
 
 ## Install
@@ -22,6 +22,8 @@ Work in the ```src/``` folder. You can manually transpile your ES6 syntax back t
 $ git clone https://github.com/NREL/eere-ie-projects-map.git
 $ npm install
 ```
+If you have issues installing npm, see https://github.nrel.gov/TADA/nrel-certs.
+
 
 ## Build
 To build the distribution, run the build task.
@@ -32,11 +34,13 @@ $ gulp build
 (You can run the ```gulp watch``` task to continually build.)
 
 ## Deploy
-To deploy to http://nrel.github.io/eere-ie-projects-map/ run the deploy task
+To deploy to http://nrel.github.io/eere-ie-projects-map/ run the deploy task. Using ```npx``` as specified below means you will not have to install gulp globally.
 
 ```bash
-$ gulp deploy
+$ npx gulp deploy
 ```
+
+This task will run a build step, write the results to a `.publish` folder (which is in the `.gitignore`) and push the contents of the `.publish` folder to the gh-pages branch.
 
 ### In the wild
 The map lives here: http://energy.gov/indianenergy/tribal-energy-projects-map
