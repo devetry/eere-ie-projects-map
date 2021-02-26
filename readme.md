@@ -45,3 +45,11 @@ This task will run a build step, write the results to a `.publish` folder (which
 ### In the wild
 The map lives here: http://energy.gov/indianenergy/tribal-energy-projects-map
 
+### Debugging in production
+
+It appears that `browsersync`, which is used to reload and serve the files for local developement may do some light parsing of html files (ignoring trailing slashes, etc.) that does not happen in production. So, if you're noticing a bug that's appearing in production but you can't seem to reproduce locally with `gulp watch`, try reproducing the production environment by
+
+1. running `gulp build`
+2. instead of going to port 3000 to view the map, open `[path]/eere-ie-projects-map/dist/index.html`
+3. open the browser console
+
