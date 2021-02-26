@@ -207,7 +207,6 @@ import GeoJSON from './geojson.min.js';
     geojsondata.features = geojsondata.features.filter((feat) =>
       filterData(feat, config.uiFilters)
     );
-    console.log(geojsondata.features);
 
     map.getSource("locations").setData(geojsondata);
     zoomMapBounds(geojsondata.features, config);
