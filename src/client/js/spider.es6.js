@@ -1,3 +1,5 @@
+import mapboxgl from 'mapbox-gl'
+
 export default function MapboxglSpiderifier(map, userOptions) {
   var util = {
     each: eachFn,

@@ -1,6 +1,7 @@
-// var MapboxglSpiderifier = require('./spider.es6.js')
 import MapboxglSpiderifier from './spider.es6.js';
+import mapboxgl from 'mapbox-gl';
 import GeoJSON from './geojson.min.js';
+
 (() => {
   "use strict";
   
