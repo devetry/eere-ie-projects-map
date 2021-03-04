@@ -42,6 +42,10 @@ $ npx gulp deploy
 
 This task will run a build step, write the results to a `.publish` folder (which is in the `.gitignore`) and push the contents of the `.publish` folder to the gh-pages branch.
 
+## Note on IE Compatibility and Mapboxgl
+
+Mapboxgl is not compatible with IE 11, so we're using Mapboxgl 1.13
+
 ### In the wild
 The map lives here: http://energy.gov/indianenergy/tribal-energy-projects-map
 
